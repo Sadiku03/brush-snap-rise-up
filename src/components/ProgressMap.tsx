@@ -1,4 +1,3 @@
-
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useUserStore } from '@/store/userStore';
 import { useState } from 'react';
@@ -8,7 +7,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useIsMobile } from '@/hooks/use-mobile';
 
-// Define our data structure for type safety
 interface ChartDataPoint {
   date: string;
   plannedWakeUp: number;
@@ -24,7 +22,6 @@ const ProgressMap = () => {
   const [expanded, setExpanded] = useState(false);
   const isMobile = useIsMobile();
 
-  // Format minutes since midnight to readable time (e.g., "6:30 AM")
   const formatMinutes = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -33,32 +30,24 @@ const ProgressMap = () => {
     return `${formattedHour}:${mins.toString().padStart(2, '0')} ${period}`;
   };
 
-  // Format for 24-hour time display
   const format24Hours = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   };
 
-  // Prepare data for the chart
   const getChartData = (): ChartDataPoint[] => {
     if (!wakeUpPlan) return [];
 
-    // Map through the intervals to create data points
     return wakeUpPlan.intervals.map(interval => {
-      // Convert wake time to minutes for the chart
       const [hours, minutes] = interval.wakeTime.split(':').map(Number);
       const timeInMinutes = hours * 60 + minutes;
 
-      // Find actual wake-up verification for this date if it exists
       const verification = brushSnaps.find(snap => snap.date === interval.date);
 
-      // If verification exists, get the actual wake-up time
       let actualWakeUpMinutes = null;
       if (verification) {
-        // For demo purposes, we'll generate a random time close to the planned time
-        // In a real app, you would extract the actual time from the verification
-        const randomOffset = Math.floor(Math.random() * 30) - 15; // -15 to +15 minutes
+        const randomOffset = Math.floor(Math.random() * 30) - 15;
         actualWakeUpMinutes = timeInMinutes + randomOffset;
       }
       
@@ -80,7 +69,6 @@ const ProgressMap = () => {
   
   const chartData = getChartData();
 
-  // Calculate overall progress
   const calculateProgress = () => {
     if (!wakeUpPlan) return 0;
     const totalIntervals = wakeUpPlan.intervals.length;
@@ -88,20 +76,18 @@ const ProgressMap = () => {
     return totalIntervals > 0 ? Math.round(completedIntervals / totalIntervals * 100) : 0;
   };
   
-  // Custom tooltip formatter to display both planned and actual times
   const tooltipFormatter = (value: any, name: string, props: any) => {
-    // Instead of showing the minutes value, show the formatted time
     if (name === "plannedWakeUp") {
       return [props.payload.plannedWakeUpFormatted, "Target"];
     }
     if (name === "actualWakeUp") {
-      return [props.payload.actualWakeUpFormatted, "Actual"];
+      return [props.payload.actualWakeUpFormatted || "No check-in", "Actual"];
     }
     return [format24Hours(value), name];
   };
   
   return (
-    <Card className="overflow-hidden border-lilac/20 shadow-md mx-auto w-[95%] sm:w-[90%]">
+    <Card className="overflow-hidden border-lilac/20 shadow-md w-[98%] sm:w-[95%] mx-auto rounded-xl">
       <CardHeader className="bg-skyblue/20 border-b border-lilac/10 p-4 flex flex-row justify-between items-center space-y-0">
         <CardTitle className="text-xl font-bold text-indigo">Your Sleep Journey</CardTitle>
         <Button 
@@ -129,7 +115,6 @@ const ProgressMap = () => {
                   </div>
                 </div>
                 
-                {/* Target time display */}
                 <div className="text-xs font-medium text-indigo my-px">
                   {wakeUpPlan?.intervals[0]?.wakeTime || 'No target set'}
                 </div>
@@ -220,7 +205,6 @@ const ProgressMap = () => {
                   <h3 className="font-semibold text-indigo text-sm">Wake-Up Milestones</h3>
                   <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
                     {wakeUpPlan.intervals.map((interval, index) => {
-                      // Find matching brush snap for this day, if any
                       const brushSnap = brushSnaps.find(snap => snap.date === interval.date);
                       return (
                         <div 

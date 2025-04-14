@@ -1,7 +1,7 @@
 
 import { useState } from "react";
-import { Routes, Route, Link, useLocation } from "react-router-dom";
-import { Home, User, Award, BarChart, Moon, Menu, X, LogOut, Wifi, Battery } from "lucide-react";
+import { Routes, Route, Link, useLocation, NavLink } from "react-router-dom";
+import { Home, User, Award, BarChart, Moon, Menu, X, LogOut, Wifi, Battery, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
 import { useToast } from "@/components/ui/use-toast";
@@ -68,9 +68,9 @@ const AppLayout = () => {
         </div>
       </header>
       
-      {/* iOS-style Drawer Menu that stays within the iPhone frame */}
+      {/* iOS-style Drawer Menu - Simplified for secondary options */}
       <Drawer open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <DrawerContent className="ios-drawer h-[70%] max-h-[70%]" onClick={(e) => e.stopPropagation()}>
+        <DrawerContent className="ios-drawer h-[60%] max-h-[60%]" onClick={(e) => e.stopPropagation()}>
           <div className="mx-auto mt-2 h-1 w-12 rounded-full bg-indigo/20"></div>
           <DrawerHeader className="text-center border-b border-lilac/10 pb-2">
             <DrawerTitle className="text-lg font-semibold text-indigo">Menu</DrawerTitle>
@@ -78,58 +78,6 @@ const AppLayout = () => {
           
           <nav className="p-3 overflow-auto">
             <div className="space-y-1">
-              <Link
-                to="/app"
-                className={`ios-menu-button ${
-                  location.pathname === '/app' 
-                    ? 'ios-menu-button-active' 
-                    : 'ios-menu-button-inactive'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Home className="h-5 w-5" />
-                <span>Dashboard</span>
-              </Link>
-              
-              <Link
-                to="/app/profile"
-                className={`ios-menu-button ${
-                  location.pathname === '/app/profile' 
-                    ? 'ios-menu-button-active' 
-                    : 'ios-menu-button-inactive'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <User className="h-5 w-5" />
-                <span>Profile</span>
-              </Link>
-              
-              <Link
-                to="/app/quests"
-                className={`ios-menu-button ${
-                  location.pathname === '/app/quests' 
-                    ? 'ios-menu-button-active' 
-                    : 'ios-menu-button-inactive'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Award className="h-5 w-5" />
-                <span>Quests</span>
-              </Link>
-              
-              <Link
-                to="/app/progress"
-                className={`ios-menu-button ${
-                  location.pathname === '/app/progress' 
-                    ? 'ios-menu-button-active' 
-                    : 'ios-menu-button-inactive'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <BarChart className="h-5 w-5" />
-                <span>Progress</span>
-              </Link>
-              
               <Link
                 to="/app/wind-down"
                 className={`ios-menu-button ${
@@ -142,6 +90,8 @@ const AppLayout = () => {
                 <Moon className="h-5 w-5" />
                 <span>Wind Down</span>
               </Link>
+              
+              {/* Add other secondary navigation items here if needed */}
             </div>
           </nav>
           
@@ -169,47 +119,67 @@ const AppLayout = () => {
         </Routes>
       </main>
       
-      {/* iOS-Style Tab Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-lilac/20 flex justify-around py-3 z-10">
-        <Link
+      {/* Enhanced iOS-Style Tab Bar */}
+      <nav 
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-lilac/20 flex justify-around py-2 z-10"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
+        <NavLink
           to="/app"
-          className={`p-1 rounded-lg flex flex-col items-center ${
-            location.pathname === '/app' ? 'text-coral' : 'text-indigo/70'
-          }`}
+          className={({ isActive }) =>
+            `p-1 rounded-lg flex flex-col items-center ${
+              isActive ? 'text-coral' : 'text-indigo/70'
+            }`
+          }
+          end
         >
-          <Home className={`h-6 w-6 ${location.pathname === '/app' ? 'fill-coral/20' : ''}`} />
+          <Home className={({ isActive }) => 
+            `h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`
+          } />
           <span className="text-xs mt-1 font-medium">Home</span>
-        </Link>
+        </NavLink>
         
-        <Link
-          to="/app/quests"
-          className={`p-1 rounded-lg flex flex-col items-center ${
-            location.pathname === '/app/quests' ? 'text-coral' : 'text-indigo/70'
-          }`}
-        >
-          <Award className={`h-6 w-6 ${location.pathname === '/app/quests' ? 'fill-coral/20' : ''}`} />
-          <span className="text-xs mt-1 font-medium">Quests</span>
-        </Link>
-        
-        <Link
+        <NavLink
           to="/app/progress"
-          className={`p-1 rounded-lg flex flex-col items-center ${
-            location.pathname === '/app/progress' ? 'text-coral' : 'text-indigo/70'
-          }`}
+          className={({ isActive }) =>
+            `p-1 rounded-lg flex flex-col items-center ${
+              isActive ? 'text-coral' : 'text-indigo/70'
+            }`
+          }
         >
-          <BarChart className={`h-6 w-6 ${location.pathname === '/app/progress' ? 'fill-coral/20' : ''}`} />
-          <span className="text-xs mt-1 font-medium">Progress</span>
-        </Link>
+          <Calendar className={({ isActive }) => 
+            `h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`
+          } />
+          <span className="text-xs mt-1 font-medium">Schedule</span>
+        </NavLink>
         
-        <Link
-          to="/app/profile"
-          className={`p-1 rounded-lg flex flex-col items-center ${
-            location.pathname === '/app/profile' ? 'text-coral' : 'text-indigo/70'
-          }`}
+        <NavLink
+          to="/app/quests"
+          className={({ isActive }) =>
+            `p-1 rounded-lg flex flex-col items-center ${
+              isActive ? 'text-coral' : 'text-indigo/70'
+            }`
+          }
         >
-          <User className={`h-6 w-6 ${location.pathname === '/app/profile' ? 'fill-coral/20' : ''}`} />
+          <Award className={({ isActive }) => 
+            `h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`
+          } />
+          <span className="text-xs mt-1 font-medium">Quests</span>
+        </NavLink>
+        
+        <NavLink
+          to="/app/profile"
+          className={({ isActive }) =>
+            `p-1 rounded-lg flex flex-col items-center ${
+              isActive ? 'text-coral' : 'text-indigo/70'
+            }`
+          }
+        >
+          <User className={({ isActive }) => 
+            `h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`
+          } />
           <span className="text-xs mt-1 font-medium">Profile</span>
-        </Link>
+        </NavLink>
       </nav>
     </div>
   );

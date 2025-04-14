@@ -1,5 +1,5 @@
-
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Sheet,
   SheetContent,
@@ -18,6 +18,7 @@ interface ScheduleCalendarProps {
 
 const ScheduleCalendar = ({ wakeUpPlan }: ScheduleCalendarProps) => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   
   if (!wakeUpPlan) return null;
   
@@ -62,6 +63,11 @@ const ScheduleCalendar = ({ wakeUpPlan }: ScheduleCalendarProps) => {
       </div>
     );
   };
+
+  const handleViewSchedule = () => {
+    navigate('/app/progress');
+    setOpen(false);
+  };
   
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -95,46 +101,12 @@ const ScheduleCalendar = ({ wakeUpPlan }: ScheduleCalendarProps) => {
         </div>
         
         <div className="mt-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-indigo">Schedule Details</h3>
-            <div className="flex items-center space-x-2 text-xs">
-              <div className="flex items-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 mr-1" />
-                <span className="text-indigo/70">Completed</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-coral mr-1" />
-                <span className="text-indigo/70">Upcoming</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="max-h-48 overflow-y-auto space-y-2 pr-1 mt-2">
-            {wakeUpPlan.intervals.map((interval, idx) => (
-              <div 
-                key={`${interval.date}-${idx}`}
-                className={`p-3 rounded-lg border flex justify-between items-center
-                  ${interval.completed 
-                    ? 'bg-emerald-50 border-emerald-200' 
-                    : 'bg-white border-lilac/20'}`}
-              >
-                <div className="flex items-center gap-2">
-                  <div 
-                    className={`w-3 h-3 rounded-full 
-                      ${interval.completed ? 'bg-emerald-400' : 'bg-coral'}`}
-                  />
-                  <span className="font-medium">{interval.wakeTime}</span>
-                </div>
-                <span className="text-sm text-indigo/70">
-                  {new Date(interval.date).toLocaleDateString(undefined, {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </span>
-              </div>
-            ))}
-          </div>
+          <Button 
+            onClick={handleViewSchedule} 
+            className="w-full"
+          >
+            Go to Full Schedule
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

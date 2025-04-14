@@ -1,10 +1,23 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Award, CheckCircle, Star, RefreshCw } from "lucide-react";
+import { Award, CheckCircle, Star, RefreshCw, Info } from "lucide-react";
 import { useUserStore, Quest } from '@/store/userStore';
 import { generateDailyQuests } from '@/utils/questManager';
 import { useToast } from '@/components/ui/use-toast';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+// Function to calculate XP with streak bonus (same as in store)
+const calculateXpWithStreak = (baseXp: number, streak: number): number => {
+  const bonusPercentage = 0.1; // 10% bonus per day in streak
+  const multiplier = 1 + (streak * bonusPercentage);
+  return Math.round(baseXp * multiplier);
+};
 
 const QuestSystem = () => {
   const { 
@@ -18,11 +31,14 @@ const QuestSystem = () => {
   const [refreshing, setRefreshing] = useState(false);
   
   const handleCompleteQuest = (quest: Quest) => {
+    // Calculate the streak-adjusted XP for the toast message
+    const adjustedXp = calculateXpWithStreak(quest.xpReward, progress.streak);
+    
     completeQuest(quest.id);
     
     toast({
       title: "Quest Completed!",
-      description: `You earned ${quest.xpReward} XP for completing "${quest.title}"`,
+      description: `You earned ${adjustedXp} XP for completing "${quest.title}"`,
       duration: 3000,
     });
   };
@@ -38,6 +54,9 @@ const QuestSystem = () => {
       });
     }, 1000);
   };
+  
+  // Calculate the current streak multiplier
+  const streakMultiplier = (1 + (progress.streak * 0.1)).toFixed(1);
   
   return (
     <div className="bg-white rounded-xl shadow-md border border-lilac/20 overflow-hidden">
@@ -75,11 +94,27 @@ const QuestSystem = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-1 bg-lilac/20 px-3 py-1 rounded-full">
-            <Star className="h-4 w-4 text-coral" />
-            <span className="font-medium text-indigo">
-              {progress.streak} day streak
-            </span>
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-1 bg-lilac/20 px-3 py-1 rounded-full">
+              <Star className="h-4 w-4 text-coral" />
+              <span className="font-medium text-indigo">
+                {progress.streak} day streak
+              </span>
+            </div>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 text-xs text-indigo/70 cursor-help">
+                    <Info className="h-3 w-3" />
+                    <span>Streak multiplier: {streakMultiplier}x</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">Each day in your streak gives a 10% XP bonus!</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
         
@@ -101,9 +136,26 @@ const QuestSystem = () => {
                     <h3 className="font-semibold text-lg text-indigo">{quest.title}</h3>
                     <p className="text-indigo/70 text-sm">{quest.description}</p>
                   </div>
-                  <div className="flex items-center gap-1 bg-coral/10 px-2 py-1 rounded-full">
-                    <Star className="h-3 w-3 text-coral" />
-                    <span className="text-sm font-medium text-coral">{quest.xpReward} XP</span>
+                  <div className="flex items-center gap-1">
+                    <div className="bg-coral/10 px-2 py-1 rounded-full flex items-center">
+                      <Star className="h-3 w-3 text-coral" />
+                      <span className="text-sm font-medium text-coral">{quest.xpReward} XP</span>
+                    </div>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="bg-emerald-100 px-2 py-1 rounded-full flex items-center">
+                            <span className="text-xs font-medium text-emerald-700">
+                              {calculateXpWithStreak(quest.xpReward, progress.streak)} XP with streak
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-sm">Your {progress.streak}-day streak gives you a {streakMultiplier}x XP bonus!</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
                 <div className="mt-4 flex justify-end">

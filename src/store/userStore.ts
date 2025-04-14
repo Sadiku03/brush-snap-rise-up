@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -39,23 +38,18 @@ export interface UserProgress {
 }
 
 interface UserStore {
-  // User Profile
   name: string | null;
   email: string | null;
   isOnboarded: boolean;
   
-  // Wake Up Plan
   wakeUpPlan: WakeUpPlan | null;
   
-  // Quests
   availableQuests: Quest[];
   completedQuests: Quest[];
   
-  // Progress
   progress: UserProgress;
   brushSnaps: BrushSnap[];
   
-  // Actions
   setUser: (name: string, email: string) => void;
   completeOnboarding: () => void;
   setWakeUpPlan: (plan: WakeUpPlan) => void;
@@ -65,7 +59,12 @@ interface UserStore {
   resetProgress: () => void;
 }
 
-// Initial quests data
+const calculateXpWithStreak = (baseXp: number, streak: number): number => {
+  const bonusPercentage = 0.1; // 10% bonus per day in streak
+  const multiplier = 1 + (streak * bonusPercentage);
+  return Math.round(baseXp * multiplier);
+};
+
 const initialQuests: Quest[] = [
   {
     id: '1',
@@ -93,7 +92,6 @@ const initialQuests: Quest[] = [
   },
 ];
 
-// Initial user progress
 const initialProgress: UserProgress = {
   level: 1,
   xp: 0,
@@ -106,7 +104,6 @@ const initialProgress: UserProgress = {
 export const useUserStore = create<UserStore>()(
   persist(
     (set, get) => ({
-      // Initial state
       name: null,
       email: null,
       isOnboarded: false,
@@ -116,7 +113,6 @@ export const useUserStore = create<UserStore>()(
       progress: initialProgress,
       brushSnaps: [],
       
-      // Actions
       setUser: (name, email) => set({ name, email }),
       
       completeOnboarding: () => set({ isOnboarded: true }),
@@ -135,9 +131,10 @@ export const useUserStore = create<UserStore>()(
         
         const completedQuest = { ...quest, completed: true };
         
-        // Calculate new XP and level
-        const newXp = progress.xp + quest.xpReward;
-        const newTotalXp = progress.totalXp + quest.xpReward;
+        const streakAdjustedXp = calculateXpWithStreak(quest.xpReward, progress.streak);
+        
+        const newXp = progress.xp + streakAdjustedXp;
+        const newTotalXp = progress.totalXp + streakAdjustedXp;
         const xpToNextLevel = progress.level * 100;
         const newLevel = newXp >= xpToNextLevel 
           ? progress.level + 1 
@@ -160,10 +157,8 @@ export const useUserStore = create<UserStore>()(
         const { brushSnaps, progress } = get();
         const today = new Date().toISOString().split('T')[0];
         
-        // Check if this is a new day
         const isNewDay = progress.lastCheckIn !== today;
         
-        // Update streak
         let newStreak = progress.streak;
         let newLongestStreak = progress.longestStreak;
         
@@ -172,27 +167,43 @@ export const useUserStore = create<UserStore>()(
           yesterday.setDate(yesterday.getDate() - 1);
           const yesterdayStr = yesterday.toISOString().split('T')[0];
           
-          // Check if the last check-in was yesterday
           if (progress.lastCheckIn === yesterdayStr) {
             newStreak += 1;
             if (newStreak > newLongestStreak) {
               newLongestStreak = newStreak;
             }
           } else {
-            // Streak broken
             newStreak = 1;
           }
+          
+          const baseCheckInXp = 10;
+          const streakAdjustedXp = calculateXpWithStreak(baseCheckInXp, newStreak);
+          
+          const newXp = progress.xp + streakAdjustedXp;
+          const newTotalXp = progress.totalXp + streakAdjustedXp;
+          const xpToNextLevel = progress.level * 100;
+          const newLevel = newXp >= xpToNextLevel 
+            ? progress.level + 1 
+            : progress.level;
+          const finalXp = newXp >= xpToNextLevel ? newXp - xpToNextLevel : newXp;
+          
+          set({
+            brushSnaps: [...brushSnaps, brushSnap],
+            progress: {
+              ...progress,
+              streak: newStreak,
+              longestStreak: newLongestStreak,
+              lastCheckIn: today,
+              xp: finalXp,
+              totalXp: newTotalXp,
+              level: newLevel,
+            }
+          });
+        } else {
+          set({
+            brushSnaps: [...brushSnaps, brushSnap],
+          });
         }
-        
-        set({
-          brushSnaps: [...brushSnaps, brushSnap],
-          progress: {
-            ...progress,
-            streak: newStreak,
-            longestStreak: newLongestStreak,
-            lastCheckIn: today,
-          }
-        });
       },
       
       recordWakeUp: (date) => {

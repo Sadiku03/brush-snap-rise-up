@@ -1,11 +1,13 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Clock, Calendar, ArrowRight, Edit2, Check, Camera } from "lucide-react";
+import { Clock, Calendar, ArrowRight, Edit2, Check, Camera, Bell } from "lucide-react";
 import { calculateWakeUpPlan, getNextWakeUpTime, isValidWakeUpTime } from '@/utils/planCalculator';
 import { useUserStore } from '@/store/userStore';
 import { useToast } from '@/components/ui/use-toast';
+import { NativeBridge } from '@/services/NativeBridge';
 
 const SmartWakeUpPlan = () => {
   const { wakeUpPlan, setWakeUpPlan, brushSnaps, addBrushSnap, recordWakeUp } = useUserStore();
@@ -24,12 +26,104 @@ const SmartWakeUpPlan = () => {
     })()
   );
   const [showCheckIn, setShowCheckIn] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   
   const { toast } = useToast();
   
   const nextWakeUp = wakeUpPlan ? getNextWakeUpTime(wakeUpPlan) : null;
   
   const forceShowCheckIn = false; // Changed to false to disable forced check-in
+  
+  // Setup notification handling
+  useEffect(() => {
+    const setupNotifications = async () => {
+      if (NativeBridge.isNativePlatform()) {
+        const hasPermission = await NativeBridge.requestNotificationPermission();
+        setNotificationsEnabled(hasPermission);
+        
+        if (hasPermission) {
+          // Set up notification handlers
+          await NativeBridge.setupNotificationHandlers((notificationData) => {
+            console.log('Notification received:', notificationData);
+            
+            if (notificationData.extra?.wakeUpDate) {
+              // Mark the wake-up as completed if notification was triggered
+              recordWakeUp(notificationData.extra.wakeUpDate);
+              
+              toast({
+                title: "Wake-up recorded!",
+                description: "Your wake-up has been marked as completed.",
+                duration: 3000,
+              });
+            }
+          });
+          
+          toast({
+            title: "Notifications Enabled",
+            description: "You'll receive wake-up reminders at your scheduled times.",
+            duration: 3000,
+          });
+        }
+      }
+    };
+    
+    setupNotifications();
+    
+    // Clean up notification listeners on unmount
+    return () => {
+      // This would clean up listeners in a real implementation
+    };
+  }, [toast, recordWakeUp]);
+  
+  // Schedule notifications for wake-up times
+  useEffect(() => {
+    if (!wakeUpPlan || !notificationsEnabled || !NativeBridge.isNativePlatform()) return;
+    
+    // Cancel any existing notifications first
+    const cancelExistingNotifications = async () => {
+      for (let i = 0; i < wakeUpPlan.intervals.length; i++) {
+        await NativeBridge.cancelNotification(i + 1000);
+      }
+    };
+    
+    // Schedule new notifications
+    const scheduleNewNotifications = async () => {
+      await cancelExistingNotifications();
+      
+      const today = new Date().toISOString().split('T')[0];
+      
+      wakeUpPlan.intervals.forEach((interval, index) => {
+        if (interval.date >= today && !interval.completed) {
+          const [hours, minutes] = interval.wakeTime.split(':').map(Number);
+          
+          const wakeDate = new Date(interval.date);
+          wakeDate.setHours(hours, minutes, 0, 0);
+          
+          // Don't schedule if it's in the past
+          if (wakeDate > new Date()) {
+            NativeBridge.scheduleWakeUpNotification(
+              index + 1000, // Unique ID for each notification
+              "Time to Wake Up!",
+              `It's ${interval.wakeTime}, your scheduled wake-up time. Tap to check in and set an alarm.`,
+              wakeDate,
+              {
+                wakeUpTime: interval.wakeTime,
+                wakeUpDate: interval.date
+              }
+            );
+          }
+        }
+      });
+      
+      toast({
+        title: "Wake-up Reminders Set",
+        description: "You'll be notified at your scheduled wake-up times.",
+        duration: 3000,
+      });
+    };
+    
+    scheduleNewNotifications();
+  }, [wakeUpPlan, notificationsEnabled, toast]);
   
   useEffect(() => {
     if (!wakeUpPlan || !nextWakeUp) return;
@@ -73,6 +167,19 @@ const SmartWakeUpPlan = () => {
     const plan = calculateWakeUpPlan(currentWakeTime, targetWakeTime, targetDate);
     setWakeUpPlan(plan);
     setEditing(false);
+    
+    toast({
+      title: "Wake-up Plan Created",
+      description: "Your personalized wake-up plan is ready!",
+      duration: 3000,
+    });
+    
+    // Request notification permissions if we haven't already
+    if (NativeBridge.isNativePlatform() && !notificationsEnabled) {
+      NativeBridge.requestNotificationPermission().then((hasPermission) => {
+        setNotificationsEnabled(hasPermission);
+      });
+    }
   };
   
   const calculateProgress = () => {
@@ -84,6 +191,36 @@ const SmartWakeUpPlan = () => {
   
   const today = new Date().toISOString().split('T')[0];
   const alreadyVerifiedToday = brushSnaps.some(snap => snap.date === today);
+  
+  // Function to request to set a native alarm
+  const requestSetNativeAlarm = async (time: string) => {
+    if (!NativeBridge.isNativePlatform()) {
+      toast({
+        title: "Native Feature",
+        description: "This feature is only available on mobile devices.",
+        duration: 3000,
+      });
+      return;
+    }
+    
+    if (NativeBridge.getPlatform() === 'ios') {
+      // On iOS, we'd use Siri Shortcuts
+      await NativeBridge.openSiriShortcutForAlarm(time);
+      
+      toast({
+        title: "Setting Alarm",
+        description: `Opening Siri to set an alarm for ${time}.`,
+        duration: 3000,
+      });
+    } else {
+      // For Android, we'd need a different approach
+      toast({
+        title: "Feature In Development",
+        description: "Setting alarms on Android will be available soon.",
+        duration: 3000,
+      });
+    }
+  };
   
   return (
     <div className="bg-white rounded-xl shadow-md border border-lilac/20 overflow-hidden">
@@ -200,6 +337,16 @@ const SmartWakeUpPlan = () => {
                     })}
                   </p>
                 </div>
+                
+                {/* Add new button for setting a native alarm */}
+                <Button
+                  onClick={() => requestSetNativeAlarm(nextWakeUp.time)}
+                  className="mt-3 w-full bg-indigo hover:bg-indigo/90 text-white"
+                  disabled={!NativeBridge.isNativePlatform()}
+                >
+                  <Bell className="h-5 w-5 mr-2" />
+                  Set Native Alarm
+                </Button>
                 
                 {showCheckIn && !alreadyVerifiedToday && (
                   <CheckInButton 

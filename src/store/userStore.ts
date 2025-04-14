@@ -2,6 +2,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DailyCheckIn, logCheckIn, timeToMinutes } from '../utils/checkInTracker';
+import { generateDailyQuests } from '../utils/questManager';
+
+export enum QuestCategory {
+  MORNING = "Morning",
+  NIGHT = "Night",
+  CONSISTENCY = "Consistency",
+  GENERAL = "General"
+}
 
 export interface Quest {
   id: string;
@@ -10,6 +18,8 @@ export interface Quest {
   xpReward: number;
   completed: boolean;
   dateAssigned: string;
+  category: QuestCategory;
+  detailedDescription?: string;
 }
 
 export interface WakeUpPlan {
@@ -45,6 +55,7 @@ export interface UserProgress {
   streak: number;
   longestStreak: number;
   lastCheckIn: string | null;
+  lastQuestRefresh: string | null;
 }
 
 interface UserStore {
@@ -72,6 +83,7 @@ interface UserStore {
   resetProgress: () => void;
   setShowRecalculationModal: (show: boolean) => void;
   recalculateWakeUpPlan: (latestWakeTime: string) => void;
+  refreshDailyQuests: () => void;
 }
 
 const calculateXpWithStreak = (baseXp: number, streak: number): number => {
@@ -88,6 +100,8 @@ const initialQuests: Quest[] = [
     xpReward: 50,
     completed: false,
     dateAssigned: new Date().toISOString(),
+    category: QuestCategory.MORNING,
+    detailedDescription: 'Get up within 15 minutes of your target wake-up time to establish a consistent rhythm.'
   },
   {
     id: '2',
@@ -96,6 +110,8 @@ const initialQuests: Quest[] = [
     xpReward: 30,
     completed: false,
     dateAssigned: new Date().toISOString(),
+    category: QuestCategory.NIGHT,
+    detailedDescription: 'Avoid blue light from devices to help your body naturally prepare for sleep.'
   },
   {
     id: '3',
@@ -104,6 +120,8 @@ const initialQuests: Quest[] = [
     xpReward: 40,
     completed: false,
     dateAssigned: new Date().toISOString(),
+    category: QuestCategory.CONSISTENCY,
+    detailedDescription: 'Maintain a steady sleep schedule by going to bed at approximately the same time each night.'
   },
 ];
 
@@ -114,6 +132,7 @@ const initialProgress: UserProgress = {
   streak: 0,
   longestStreak: 0,
   lastCheckIn: null,
+  lastQuestRefresh: null
 };
 
 export const useUserStore = create<UserStore>()(
@@ -137,6 +156,19 @@ export const useUserStore = create<UserStore>()(
       setWakeUpPlan: (plan) => set({ wakeUpPlan: plan }),
       
       setShowRecalculationModal: (show) => set({ showRecalculationModal: show }),
+      
+      refreshDailyQuests: () => {
+        const today = new Date().toISOString().split('T')[0];
+        const newQuests = generateDailyQuests();
+        
+        set((state) => ({
+          availableQuests: newQuests,
+          progress: {
+            ...state.progress,
+            lastQuestRefresh: today
+          }
+        }));
+      },
       
       recalculateWakeUpPlan: (latestWakeTime) => {
         const { wakeUpPlan } = get();

@@ -1,9 +1,13 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Award, CheckCircle, Star, RefreshCw, Info } from "lucide-react";
-import { useUserStore, Quest } from '@/store/userStore';
-import { generateDailyQuests } from '@/utils/questManager';
+import { Award, Star, RefreshCw, Info } from "lucide-react";
+import { useUserStore } from '@/store/userStore';
+import { 
+  generateDailyQuests, 
+  shouldRefreshQuests,
+  getXpUntilNextLevel 
+} from '@/utils/questManager';
 import { useToast } from '@/components/ui/use-toast';
 import { 
   Tooltip,
@@ -11,6 +15,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Progress } from "@/components/ui/progress";
+import QuestList from './QuestList';
 
 // Function to calculate XP with streak bonus (same as in store)
 const calculateXpWithStreak = (baseXp: number, streak: number): number => {
@@ -19,18 +25,37 @@ const calculateXpWithStreak = (baseXp: number, streak: number): number => {
   return Math.round(baseXp * multiplier);
 };
 
+const LOCAL_STORAGE_LAST_REFRESH_KEY = 'risequest-last-refresh-date';
+
 const QuestSystem = () => {
   const { 
     availableQuests, 
     completedQuests, 
     completeQuest, 
-    progress 
+    progress,
+    refreshDailyQuests
   } = useUserStore();
+  
   const { toast } = useToast();
-  
   const [refreshing, setRefreshing] = useState(false);
+  const [questsRefreshed, setQuestsRefreshed] = useState(false);
   
-  const handleCompleteQuest = (quest: Quest) => {
+  // Calculate the current streak multiplier
+  const streakMultiplier = (1 + (progress.streak * 0.1)).toFixed(1);
+  
+  // Calculate XP remaining until next level
+  const xpRemaining = getXpUntilNextLevel(progress.level, progress.xp);
+  
+  // Weekly streak progress (out of 7 days)
+  const weeklyStreakProgress = Math.min(progress.streak / 7, 1) * 100;
+  
+  // Calculate adjusted XP for a given base XP
+  const calculateAdjustedXp = (baseXp: number) => {
+    return calculateXpWithStreak(baseXp, progress.streak);
+  };
+  
+  // Handle completing a quest
+  const handleCompleteQuest = (quest: any) => {
     // Calculate the streak-adjusted XP for the toast message
     const adjustedXp = calculateXpWithStreak(quest.xpReward, progress.streak);
     
@@ -43,20 +68,44 @@ const QuestSystem = () => {
     });
   };
   
+  // Handle manual quest refresh
   const handleRefreshQuests = () => {
     setRefreshing(true);
+    
+    // Actual refresh logic
+    refreshDailyQuests();
+    
+    // Save the refresh date to localStorage
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem(LOCAL_STORAGE_LAST_REFRESH_KEY, today);
+    
+    setQuestsRefreshed(true);
+    
     setTimeout(() => {
       setRefreshing(false);
+      
       toast({
-        title: "Coming Soon",
-        description: "Quest refreshing will be available in a future update.",
+        title: "Quests Refreshed",
+        description: "Your daily quests have been updated with new challenges!",
         duration: 3000,
       });
     }, 1000);
   };
   
-  // Calculate the current streak multiplier
-  const streakMultiplier = (1 + (progress.streak * 0.1)).toFixed(1);
+  // Check if quests need refreshing on page load
+  useEffect(() => {
+    const lastRefreshDate = localStorage.getItem(LOCAL_STORAGE_LAST_REFRESH_KEY);
+    
+    if (shouldRefreshQuests(lastRefreshDate)) {
+      refreshDailyQuests();
+      
+      // Save today's date as the refresh date
+      const today = new Date().toISOString().split('T')[0];
+      localStorage.setItem(LOCAL_STORAGE_LAST_REFRESH_KEY, today);
+      
+      setQuestsRefreshed(true);
+    }
+  }, [refreshDailyQuests]);
   
   return (
     <div className="bg-white rounded-xl shadow-md border border-lilac/20 overflow-hidden">
@@ -79,6 +128,13 @@ const QuestSystem = () => {
       </div>
       
       <div className="p-5">
+        {questsRefreshed && (
+          <div className="bg-skyblue/20 text-indigo rounded-lg p-3 mb-4 flex items-center">
+            <Info className="h-4 w-4 mr-2 text-indigo" />
+            <p className="text-sm">New quests have been generated for today!</p>
+          </div>
+        )}
+        
         <div className="flex items-center justify-between mb-5">
           <div>
             <p className="text-sm text-indigo/60 mb-1">Your Progress</p>
@@ -92,6 +148,7 @@ const QuestSystem = () => {
               </div>
               <div className="text-sm text-indigo/60">{progress.xp}/{progress.level * 100} XP</div>
             </div>
+            <p className="text-xs text-indigo/60 mt-1">{xpRemaining} XP until Level {progress.level + 1}</p>
           </div>
           
           <div className="flex flex-col items-end gap-1">
@@ -100,6 +157,14 @@ const QuestSystem = () => {
               <span className="font-medium text-indigo">
                 {progress.streak} day streak
               </span>
+            </div>
+            
+            {/* Weekly streak progress */}
+            <div className="w-24 bg-indigo/10 h-1 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-lilac transition-all duration-500"
+                style={{ width: `${weeklyStreakProgress}%` }}
+              />
             </div>
             
             <TooltipProvider>
@@ -118,76 +183,28 @@ const QuestSystem = () => {
           </div>
         </div>
         
-        <div className="space-y-4">
-          {availableQuests.length === 0 ? (
-            <div className="text-center py-6">
-              <p className="text-indigo/70 mb-2">
-                You've completed all quests for today!
-              </p>
-              <p className="text-sm text-indigo/60">
-                New quests will be available tomorrow
-              </p>
-            </div>
-          ) : (
-            availableQuests.map((quest) => (
-              <div key={quest.id} className="quest-card">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-lg text-indigo">{quest.title}</h3>
-                    <p className="text-indigo/70 text-sm">{quest.description}</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="bg-coral/10 px-2 py-1 rounded-full flex items-center">
-                      <Star className="h-3 w-3 text-coral" />
-                      <span className="text-sm font-medium text-coral">{quest.xpReward} XP</span>
-                    </div>
-                    
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="bg-emerald-100 px-2 py-1 rounded-full flex items-center">
-                            <span className="text-xs font-medium text-emerald-700">
-                              {calculateXpWithStreak(quest.xpReward, progress.streak)} XP with streak
-                            </span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-sm">Your {progress.streak}-day streak gives you a {streakMultiplier}x XP bonus!</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </div>
-                <div className="mt-4 flex justify-end">
-                  <Button
-                    onClick={() => handleCompleteQuest(quest)}
-                    className="bg-skyblue hover:bg-skyblue/80 text-indigo"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Complete
-                  </Button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-        
-        {completedQuests.length > 0 && (
-          <div className="mt-6">
-            <p className="text-sm font-medium text-indigo mb-3">Completed Quests</p>
-            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-              {completedQuests.slice(0, 5).map((quest) => (
-                <div 
-                  key={quest.id} 
-                  className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex justify-between items-center"
-                >
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-500" />
-                    <span className="text-indigo/80">{quest.title}</span>
-                  </div>
-                  <div className="text-sm text-indigo/60">+{quest.xpReward} XP</div>
-                </div>
-              ))}
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-sm font-semibold text-indigo/60 uppercase tracking-wider mb-3">Available Quests</h3>
+            <QuestList 
+              quests={availableQuests}
+              onCompleteQuest={handleCompleteQuest}
+              streakMultiplier={streakMultiplier}
+              calculateAdjustedXp={calculateAdjustedXp}
+              emptyMessage="You've completed all quests for today! New quests will be available tomorrow."
+              showDetails={false}
+            />
+          </div>
+          
+          {completedQuests.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-indigo/60 uppercase tracking-wider mb-3">Completed Quests</h3>
+              <QuestList 
+                quests={completedQuests.slice(0, 5)}
+                isCompleted={true}
+                streakMultiplier={streakMultiplier}
+                showDetails={false}
+              />
               
               {completedQuests.length > 5 && (
                 <p className="text-sm text-center text-indigo/60 mt-2">
@@ -195,8 +212,8 @@ const QuestSystem = () => {
                 </p>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

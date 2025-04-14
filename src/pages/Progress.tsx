@@ -32,24 +32,45 @@ const Progress = () => {
       wakeUpPlan.targetDate
     );
 
-    const updatedPlan = {
-      ...refreshedPlan,
-      intervals: refreshedPlan.intervals.map(newInterval => {
-        const originalInterval = wakeUpPlan.intervals.find(
-          oldInterval => oldInterval.date === newInterval.date
+    // Check if the plan has actually changed
+    let hasChanges = false;
+    
+    // Compare intervals to see if there are any differences
+    if (refreshedPlan.intervals.length !== wakeUpPlan.intervals.length) {
+      hasChanges = true;
+    } else {
+      // Check for changes in wake times
+      for (let i = 0; i < refreshedPlan.intervals.length; i++) {
+        const newInterval = refreshedPlan.intervals[i];
+        const oldInterval = wakeUpPlan.intervals.find(
+          interval => interval.date === newInterval.date
         );
-        return {
-          ...newInterval,
-          completed: originalInterval ? originalInterval.completed : false
-        };
-      }),
-      adjustmentHistory: wakeUpPlan.adjustmentHistory || []
-    };
+        
+        if (!oldInterval || oldInterval.wakeTime !== newInterval.wakeTime) {
+          hasChanges = true;
+          break;
+        }
+      }
+    }
 
-    setWakeUpPlan(updatedPlan);
-    refreshedRef.current = true;
+    if (hasChanges) {
+      const updatedPlan = {
+        ...refreshedPlan,
+        intervals: refreshedPlan.intervals.map(newInterval => {
+          const originalInterval = wakeUpPlan.intervals.find(
+            oldInterval => oldInterval.date === newInterval.date
+          );
+          return {
+            ...newInterval,
+            completed: originalInterval ? originalInterval.completed : false
+          };
+        }),
+        adjustmentHistory: wakeUpPlan.adjustmentHistory || []
+      };
 
-    if (!autoRefreshed) {
+      setWakeUpPlan(updatedPlan);
+      
+      // Only set autoRefreshed if there were actual changes
       setAutoRefreshed(true);
       toast({
         title: "Wake-up Plan Updated",
@@ -57,6 +78,9 @@ const Progress = () => {
         duration: 3000,
       });
     }
+    
+    // Mark as refreshed regardless of changes to prevent repeated attempts
+    refreshedRef.current = true;
   };
   
   // Automatically refresh plan on component mount
@@ -120,7 +144,7 @@ const Progress = () => {
         </Alert>
       )}
       
-      {/* Display an alert if plan was automatically refreshed */}
+      {/* Display an alert if plan was automatically refreshed (only when actual changes were made) */}
       {wakeUpPlan && autoRefreshed && (
         <Alert className="bg-skyblue/10 text-indigo border-skyblue/20 mb-4">
           <RefreshCw className="h-4 w-4" />

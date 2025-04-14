@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -43,6 +42,9 @@ const ScheduleCalendar = ({ wakeUpPlan }: ScheduleCalendarProps) => {
     dateToWakeTimeMap.set(dateStr, { wakeTime, completed });
   });
   
+  // Group intervals by wake time to create blocks
+  const wakeTimeBlocks = groupIntervalsByWakeTime(wakeUpPlan.intervals);
+  
   // Custom day rendering to show wake time below date
   const renderDay = (day: Date) => {
     const dateStr = day.toISOString().split('T')[0];
@@ -68,6 +70,20 @@ const ScheduleCalendar = ({ wakeUpPlan }: ScheduleCalendarProps) => {
   const handleViewSchedule = () => {
     navigate('/app/progress');
     setOpen(false);
+  };
+  
+  // Format date range as "Apr 13 - Apr 15"
+  const formatDateRange = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // If dates are in same month, show "Apr 13 - 15"
+    if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+      return `${start.toLocaleDateString(undefined, { month: 'short' })} ${start.getDate()} - ${end.getDate()}`;
+    }
+    
+    // Otherwise show "Apr 13 - May 2"
+    return `${start.toLocaleDateString(undefined, { month: 'short' })} ${start.getDate()} - ${end.toLocaleDateString(undefined, { month: 'short' })} ${end.getDate()}`;
   };
   
   return (
@@ -102,6 +118,40 @@ const ScheduleCalendar = ({ wakeUpPlan }: ScheduleCalendarProps) => {
         </div>
         
         <div className="mt-6 space-y-4">
+          <div className="max-h-60 overflow-y-auto pr-2 space-y-3">
+            <p className="text-sm font-medium text-indigo mb-1">Wake-Up Blocks</p>
+            {wakeTimeBlocks.map((block, index) => (
+              <div 
+                key={index}
+                className={`p-3 rounded-lg border flex justify-between items-center bg-white border-lilac/20
+                  ${block.hasCompleted ? 'border-l-2 border-l-emerald-400' : ''}
+                  ${block.hasAdjusted ? 'border-r-2 border-r-coral' : ''}`}
+              >
+                <div className="flex items-center gap-2">
+                  <div className={`w-9 h-9 rounded-md flex items-center justify-center 
+                    ${block.hasCompleted ? 'bg-emerald-50 text-emerald-600' : 'bg-skyblue/10 text-indigo'}`}>
+                    <span className="text-lg font-semibold">{block.wakeTime}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-indigo">
+                      {formatDateRange(block.startDate, block.endDate)}
+                    </p>
+                    <p className="text-xs text-indigo/70">
+                      {block.daysCount} {block.daysCount === 1 ? 'day' : 'days'}
+                      {block.hasAdjusted && <span className="text-coral ml-2">(adjusted)</span>}
+                    </p>
+                  </div>
+                </div>
+                
+                {block.allCompleted && (
+                  <div className="bg-emerald-100 text-emerald-600 text-xs px-2 py-1 rounded-full">
+                    Completed
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          
           <Button 
             onClick={handleViewSchedule} 
             className="w-full"
@@ -113,5 +163,73 @@ const ScheduleCalendar = ({ wakeUpPlan }: ScheduleCalendarProps) => {
     </Sheet>
   );
 };
+
+// Helper function to group intervals by wake time into blocks
+function groupIntervalsByWakeTime(intervals: WakeUpPlan['intervals']) {
+  // Sort intervals by date first
+  const sortedIntervals = [...intervals].sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  
+  const blocks: {
+    wakeTime: string;
+    startDate: string;
+    endDate: string;
+    daysCount: number;
+    hasCompleted: boolean;
+    allCompleted: boolean;
+    hasAdjusted: boolean;
+  }[] = [];
+  
+  let currentBlock: {
+    wakeTime: string;
+    startDate: string;
+    endDate: string;
+    intervalIndices: number[];
+    hasCompleted: boolean;
+    allCompleted: boolean;
+    hasAdjusted: boolean;
+  } | null = null;
+  
+  sortedIntervals.forEach((interval, index) => {
+    if (!currentBlock || currentBlock.wakeTime !== interval.wakeTime) {
+      // If we have a current block, add it to blocks
+      if (currentBlock) {
+        blocks.push({
+          ...currentBlock,
+          daysCount: currentBlock.intervalIndices.length,
+        });
+      }
+      
+      // Start a new block
+      currentBlock = {
+        wakeTime: interval.wakeTime,
+        startDate: interval.date,
+        endDate: interval.date,
+        intervalIndices: [index],
+        hasCompleted: interval.completed,
+        allCompleted: interval.completed,
+        hasAdjusted: !!interval.isAdjusted
+      };
+    } else {
+      // Continue the current block
+      currentBlock.endDate = interval.date;
+      currentBlock.intervalIndices.push(index);
+      currentBlock.hasCompleted = currentBlock.hasCompleted || interval.completed;
+      currentBlock.allCompleted = currentBlock.allCompleted && interval.completed;
+      currentBlock.hasAdjusted = currentBlock.hasAdjusted || !!interval.isAdjusted;
+    }
+  });
+  
+  // Add the last block if it exists
+  if (currentBlock) {
+    blocks.push({
+      ...currentBlock,
+      daysCount: currentBlock.intervalIndices.length,
+    });
+  }
+  
+  return blocks;
+}
 
 export default ScheduleCalendar;

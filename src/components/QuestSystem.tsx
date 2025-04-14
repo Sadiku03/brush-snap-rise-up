@@ -201,7 +201,7 @@ const QuestSystem = () => {
                   <div className="bg-emerald-50 p-3">
                     <CollapsibleTrigger className="flex items-center justify-between w-full">
                       <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wider">
-                        Completed Quests Today
+                        Completed Quests
                       </h3>
                       {completedExpanded ? (
                         <ChevronDown className="h-5 w-5 text-emerald-500" />

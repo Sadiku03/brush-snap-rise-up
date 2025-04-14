@@ -141,13 +141,15 @@ const ProgressMap = () => {
                       tickMargin={8}
                     />
                     <YAxis 
+                      domain={['auto', 'auto']}
+                      ticks={[360, 390, 420, 450, 480, 510, 540]}
                       tickFormatter={formatMinutes} 
                       tick={{
                         fontSize: isMobile ? 10 : 12,
                         fill: '#2D3142'
                       }} 
                       tickMargin={8} 
-                      width={isMobile ? 35 : 45}
+                      width={isMobile ? 45 : 55}
                     />
                     <Tooltip
                       formatter={tooltipFormatter}

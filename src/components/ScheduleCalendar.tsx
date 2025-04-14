@@ -51,13 +51,13 @@ const ScheduleCalendar = ({ wakeUpPlan }: ScheduleCalendarProps) => {
     return (
       <div className="relative w-full h-full flex flex-col items-center justify-center">
         <span className="sr-only">{day.toDateString()}</span>
-        <span>{day.getDate()}</span>
-        <span className={`text-[9px] font-medium ${wakeInfo.completed ? "text-emerald-500" : "text-coral"}`}>
+        <span className="text-base font-medium">{day.getDate()}</span>
+        <span className={`text-xs font-medium mt-0.5 ${wakeInfo.completed ? "text-emerald-500" : "text-coral"}`}>
           {wakeInfo.wakeTime}
         </span>
         
         {wakeInfo.completed && (
-          <div className="absolute top-0 right-0 w-2 h-2 bg-emerald-500 rounded-full" />
+          <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full" />
         )}
       </div>
     );
@@ -68,11 +68,10 @@ const ScheduleCalendar = ({ wakeUpPlan }: ScheduleCalendarProps) => {
       <SheetTrigger asChild>
         <Button 
           variant="outline" 
-          size="icon" 
-          className="rounded-full border-indigo/30 hover:bg-skyblue/20 hover:text-indigo"
+          className="flex gap-2 px-4 py-2 rounded-full border-indigo/30 bg-skyblue/10 hover:bg-skyblue/20 hover:text-indigo"
         >
           <CalendarIcon className="h-5 w-5 text-indigo/70" />
-          <span className="sr-only">View wake-up calendar</span>
+          <span className="text-sm font-medium text-indigo">View Schedule</span>
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md">
@@ -80,14 +79,14 @@ const ScheduleCalendar = ({ wakeUpPlan }: ScheduleCalendarProps) => {
           <SheetTitle className="text-center text-indigo">Wake-Up Schedule</SheetTitle>
         </SheetHeader>
         
-        <div className="mt-6 p-2">
+        <div className="mt-6 p-2 bg-skyblue/5 rounded-lg shadow-inner">
           <Calendar
             mode="multiple"
             selected={dates.map(d => d.date)}
-            className="w-full rounded-md bg-white"
+            className="w-full rounded-md bg-white p-3 border border-lilac/10"
             components={{
               Day: ({ date }) => (
-                <div>
+                <div className="w-9 h-9 p-0 flex items-center justify-center rounded-md hover:bg-skyblue/10">
                   {renderDay(date)}
                 </div>
               ),
@@ -96,9 +95,21 @@ const ScheduleCalendar = ({ wakeUpPlan }: ScheduleCalendarProps) => {
         </div>
         
         <div className="mt-6 space-y-4">
-          <h3 className="text-sm font-semibold text-indigo">Schedule Details</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-indigo">Schedule Details</h3>
+            <div className="flex items-center space-x-2 text-xs">
+              <div className="flex items-center">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 mr-1" />
+                <span className="text-indigo/70">Completed</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-2.5 h-2.5 rounded-full bg-coral mr-1" />
+                <span className="text-indigo/70">Upcoming</span>
+              </div>
+            </div>
+          </div>
           
-          <div className="max-h-40 overflow-y-auto space-y-2">
+          <div className="max-h-48 overflow-y-auto space-y-2 pr-1 mt-2">
             {wakeUpPlan.intervals.map((interval, idx) => (
               <div 
                 key={`${interval.date}-${idx}`}
@@ -110,12 +121,13 @@ const ScheduleCalendar = ({ wakeUpPlan }: ScheduleCalendarProps) => {
                 <div className="flex items-center gap-2">
                   <div 
                     className={`w-3 h-3 rounded-full 
-                      ${interval.completed ? 'bg-emerald-400' : 'bg-indigo/20'}`}
+                      ${interval.completed ? 'bg-emerald-400' : 'bg-coral'}`}
                   />
                   <span className="font-medium">{interval.wakeTime}</span>
                 </div>
                 <span className="text-sm text-indigo/70">
                   {new Date(interval.date).toLocaleDateString(undefined, {
+                    weekday: 'short',
                     month: 'short',
                     day: 'numeric'
                   })}

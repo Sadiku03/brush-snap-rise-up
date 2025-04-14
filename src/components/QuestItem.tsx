@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { 
   CheckCircle, 
   Star,
-  RefreshCw,
   ChevronDown,
   ChevronUp,
   CheckSquare,
@@ -31,13 +30,6 @@ const categoryIcons = {
   [QuestCategory.GENERAL]: <CheckSquare className="h-4 w-4 text-gray-500" />
 };
 
-const categoryClasses = {
-  [QuestCategory.MORNING]: "text-amber-700 bg-amber-50 border-amber-200",
-  [QuestCategory.NIGHT]: "text-indigo-700 bg-indigo-50 border-indigo-200",
-  [QuestCategory.CONSISTENCY]: "text-emerald-700 bg-emerald-50 border-emerald-200", 
-  [QuestCategory.GENERAL]: "text-gray-700 bg-gray-50 border-gray-200"
-};
-
 const QuestItem = ({ 
   quest, 
   isCompleted = false, 
@@ -52,15 +44,15 @@ const QuestItem = ({
   const categoryIcon = categoryIcons[quest.category] || 
     categoryIcons[QuestCategory.GENERAL];
   
-  // Get styles based on category
-  const categoryClass = isCompleted 
-    ? "bg-emerald-50 border-emerald-200" 
-    : categoryClasses[quest.category] || categoryClasses[QuestCategory.GENERAL];
+  // Use yellow background for incomplete quests and green for completed ones
+  const backgroundClass = isCompleted 
+    ? "bg-[#F2FCE2] border-emerald-200" // Soft Green
+    : "bg-[#FEF7CD] border-amber-200";   // Soft Yellow
   
   return (
     <div className={cn(
       "quest-item border rounded-xl p-4 mb-4 transition-all",
-      categoryClass,
+      backgroundClass,
       detailsOpen && "shadow-md"
     )}>
       <div className="flex justify-between items-start">

@@ -1,14 +1,15 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Clock, Calendar, ArrowRight, Edit2 } from "lucide-react";
-import { calculateWakeUpPlan, getNextWakeUpTime } from '@/utils/planCalculator';
+import { Clock, Calendar, ArrowRight, Edit2, Check, Camera } from "lucide-react";
+import { calculateWakeUpPlan, getNextWakeUpTime, isValidWakeUpTime } from '@/utils/planCalculator';
 import { useUserStore } from '@/store/userStore';
+import { useToast } from '@/components/ui/use-toast';
 
 const SmartWakeUpPlan = () => {
-  const { wakeUpPlan, setWakeUpPlan } = useUserStore();
+  const { wakeUpPlan, setWakeUpPlan, brushSnaps, addBrushSnap, recordWakeUp } = useUserStore();
   const [editing, setEditing] = useState(!wakeUpPlan);
   const [currentWakeTime, setCurrentWakeTime] = useState(
     wakeUpPlan?.currentWakeTime || "08:00"
@@ -23,8 +24,49 @@ const SmartWakeUpPlan = () => {
       return twoWeeksFromNow.toISOString().split('T')[0];
     })()
   );
+  const [showCheckIn, setShowCheckIn] = useState(false);
+  
+  const { toast } = useToast();
   
   const nextWakeUp = wakeUpPlan ? getNextWakeUpTime(wakeUpPlan) : null;
+  
+  // Check if it's within the check-in window
+  useEffect(() => {
+    if (!wakeUpPlan || !nextWakeUp) return;
+    
+    const checkWindow = () => {
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      
+      // Only show the check-in button if today is the next wake up date
+      if (nextWakeUp.date !== today) {
+        setShowCheckIn(false);
+        return;
+      }
+      
+      // Check if the current time is within 15 minutes before or after the wake-up time
+      const wakeUpHours = parseInt(nextWakeUp.time.split(':')[0]);
+      const wakeUpMinutes = parseInt(nextWakeUp.time.split(':')[1]);
+      
+      const wakeUpDate = new Date();
+      wakeUpDate.setHours(wakeUpHours, wakeUpMinutes, 0, 0);
+      
+      // 15 minutes in milliseconds
+      const fifteenMinutes = 15 * 60 * 1000;
+      
+      const timeDiff = Math.abs(now.getTime() - wakeUpDate.getTime());
+      
+      setShowCheckIn(timeDiff <= fifteenMinutes);
+    };
+    
+    // Check initially
+    checkWindow();
+    
+    // Then check every minute
+    const interval = setInterval(checkWindow, 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [wakeUpPlan, nextWakeUp]);
   
   const handleCreatePlan = () => {
     const plan = calculateWakeUpPlan(currentWakeTime, targetWakeTime, targetDate);
@@ -38,6 +80,10 @@ const SmartWakeUpPlan = () => {
     const completedIntervals = wakeUpPlan.intervals.filter(i => i.completed).length;
     return (completedIntervals / wakeUpPlan.intervals.length) * 100;
   };
+  
+  // Check if user already has a verification for today
+  const today = new Date().toISOString().split('T')[0];
+  const alreadyVerifiedToday = brushSnaps.some(snap => snap.date === today);
   
   return (
     <div className="bg-white rounded-xl shadow-md border border-lilac/20 overflow-hidden">
@@ -142,7 +188,7 @@ const SmartWakeUpPlan = () => {
             </div>
             
             {nextWakeUp && (
-              <div className="bg-coral/10 p-4 rounded-lg border border-coral/20 mt-4">
+              <div className="bg-coral/10 p-4 rounded-lg border border-coral/20 mt-4 relative overflow-hidden">
                 <p className="text-sm text-indigo/80 mb-1">Your next wake-up time:</p>
                 <div className="flex justify-between items-center">
                   <p className="text-xl font-bold text-coral">{nextWakeUp.time}</p>
@@ -154,6 +200,42 @@ const SmartWakeUpPlan = () => {
                     })}
                   </p>
                 </div>
+                
+                {/* Check-in button - only shown during the check-in window */}
+                {showCheckIn && !alreadyVerifiedToday && (
+                  <CheckInButton 
+                    onCheckIn={() => {
+                      // Simulate opening a camera modal by redirecting to the BrushSnap component
+                      // In a real app, this would open a camera modal
+                      document.getElementById('brush-snap-component')?.scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'center'
+                      });
+                      
+                      // Flash the brush snap component to draw attention
+                      const brushSnapElement = document.getElementById('brush-snap-component');
+                      if (brushSnapElement) {
+                        brushSnapElement.classList.add('ring-4', 'ring-coral', 'ring-opacity-70');
+                        setTimeout(() => {
+                          brushSnapElement.classList.remove('ring-4', 'ring-coral', 'ring-opacity-70');
+                        }, 2000);
+                      }
+                      
+                      toast({
+                        title: "Time to check in!",
+                        description: "Take a photo with your toothbrush to verify your wake-up.",
+                        duration: 5000,
+                      });
+                    }}
+                  />
+                )}
+                
+                {/* Already verified today indicator */}
+                {alreadyVerifiedToday && (
+                  <div className="absolute top-2 right-2 bg-emerald-500 text-white p-1 rounded-full">
+                    <Check className="h-4 w-4" />
+                  </div>
+                )}
               </div>
             )}
             
@@ -199,6 +281,31 @@ const SmartWakeUpPlan = () => {
         )}
       </div>
     </div>
+  );
+};
+
+// Check-in button component with pulsing animation
+const CheckInButton = ({ onCheckIn }: { onCheckIn: () => void }) => {
+  const [isPulsing, setIsPulsing] = useState(true);
+  
+  // Start pulsing animation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsPulsing(prev => !prev);
+    }, 1500);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <Button
+      onClick={onCheckIn}
+      className={`mt-4 w-full bg-coral hover:bg-coral/90 text-white transition-all duration-300
+        ${isPulsing ? 'scale-[1.02]' : 'scale-100'}`}
+    >
+      <Camera className="h-5 w-5 mr-2" />
+      Check In Now
+    </Button>
   );
 };
 

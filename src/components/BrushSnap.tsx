@@ -93,7 +93,7 @@ const BrushSnap = () => {
   const alreadyVerifiedToday = brushSnaps.some(snap => snap.date === today);
   
   return (
-    <div className="bg-white rounded-xl shadow-md border border-lilac/20 overflow-hidden">
+    <div id="brush-snap-component" className="bg-white rounded-xl shadow-md border border-lilac/20 overflow-hidden transition-all duration-300">
       <div className="bg-skyblue/20 border-b border-lilac/10 p-4">
         <h2 className="text-xl font-bold text-indigo">
           Brush Snap Verification

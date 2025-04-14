@@ -1,12 +1,11 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Clock, Calendar, ArrowRight, Edit2, Check, Camera, Bell } from "lucide-react";
-import { calculateWakeUpPlan, getNextWakeUpTime, isValidWakeUpTime, timeToMinutes } from '@/utils/planCalculator';
+import { calculateWakeUpPlan, getNextWakeUpTime, isValidWakeUpTime, timeToMinutes, groupIntervalsByWakeTime } from '@/utils/planCalculator';
 import { useUserStore } from '@/store/userStore';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { NativeBridge } from '@/services/NativeBridge';
 
 const SmartWakeUpPlan = () => {
@@ -36,7 +35,6 @@ const SmartWakeUpPlan = () => {
   
   const forceShowCheckIn = false; // Changed to false to disable forced check-in
   
-  // Setup notification handling
   useEffect(() => {
     const setupNotifications = async () => {
       if (NativeBridge.isNativePlatform()) {
@@ -44,12 +42,10 @@ const SmartWakeUpPlan = () => {
         setNotificationsEnabled(hasPermission);
         
         if (hasPermission) {
-          // Set up notification handlers
           await NativeBridge.setupNotificationHandlers((notificationData) => {
             console.log('Notification received:', notificationData);
             
             if (notificationData.extra?.wakeUpDate) {
-              // Mark the wake-up as completed if notification was triggered
               recordWakeUp(notificationData.extra.wakeUpDate);
               
               toast({
@@ -71,24 +67,19 @@ const SmartWakeUpPlan = () => {
     
     setupNotifications();
     
-    // Clean up notification listeners on unmount
     return () => {
-      // This would clean up listeners in a real implementation
     };
   }, [toast, recordWakeUp]);
   
-  // Schedule notifications for wake-up times
   useEffect(() => {
     if (!wakeUpPlan || !notificationsEnabled || !NativeBridge.isNativePlatform()) return;
     
-    // Cancel any existing notifications first
     const cancelExistingNotifications = async () => {
       for (let i = 0; i < wakeUpPlan.intervals.length; i++) {
         await NativeBridge.cancelNotification(i + 1000);
       }
     };
     
-    // Schedule new notifications
     const scheduleNewNotifications = async () => {
       await cancelExistingNotifications();
       
@@ -101,10 +92,9 @@ const SmartWakeUpPlan = () => {
           const wakeDate = new Date(interval.date);
           wakeDate.setHours(hours, minutes, 0, 0);
           
-          // Don't schedule if it's in the past
           if (wakeDate > new Date()) {
             NativeBridge.scheduleWakeUpNotification(
-              index + 1000, // Unique ID for each notification
+              index + 1000,
               "Time to Wake Up!",
               `It's ${interval.wakeTime}, your scheduled wake-up time. Tap to check in and set an alarm.`,
               wakeDate,
@@ -127,17 +117,14 @@ const SmartWakeUpPlan = () => {
     scheduleNewNotifications();
   }, [wakeUpPlan, notificationsEnabled, toast]);
   
-  // Fix the infinite loop by using a ref to track whether we've already set the state
   useEffect(() => {
     if (!wakeUpPlan || !nextWakeUp) return;
     
-    // This function runs once on mount and when dependencies change
     const checkWindow = () => {
       const now = new Date();
       const today = now.toISOString().split('T')[0];
       
       if (nextWakeUp.date !== today) {
-        // Don't need the check to prevent loops here since this is a terminal condition
         setShowCheckIn(forceShowCheckIn);
         return;
       }
@@ -153,12 +140,10 @@ const SmartWakeUpPlan = () => {
       const timeDiff = Math.abs(now.getTime() - wakeUpDate.getTime());
       const shouldShow = forceShowCheckIn || timeDiff <= fiveMinutes;
       
-      // Only set state if necessary
       if (shouldShow !== showCheckIn) {
         setShowCheckIn(shouldShow);
       }
       
-      // Set actual wake time to current time if needed and it's not already set
       if (shouldShow && !actualWakeTime) {
         const hours = now.getHours().toString().padStart(2, '0');
         const minutes = now.getMinutes().toString().padStart(2, '0');
@@ -172,13 +157,10 @@ const SmartWakeUpPlan = () => {
       console.log("Should show check-in:", shouldShow);
     };
     
-    // Initial check
     checkWindow();
     
-    // Set up interval for periodic checks
     const interval = setInterval(checkWindow, 60 * 1000);
     
-    // Clean up interval on unmount
     return () => clearInterval(interval);
   }, [wakeUpPlan, nextWakeUp, forceShowCheckIn, actualWakeTime, showCheckIn]);
   
@@ -193,7 +175,6 @@ const SmartWakeUpPlan = () => {
       duration: 3000,
     });
     
-    // Request notification permissions if we haven't already
     if (NativeBridge.isNativePlatform() && !notificationsEnabled) {
       NativeBridge.requestNotificationPermission().then((hasPermission) => {
         setNotificationsEnabled(hasPermission);
@@ -211,9 +192,7 @@ const SmartWakeUpPlan = () => {
   const today = new Date().toISOString().split('T')[0];
   const alreadyVerifiedToday = brushSnaps.some(snap => snap.date === today);
   
-  // Handle check-in with actual wake time
   const handleCheckIn = () => {
-    // Record the wake-up with the actual wake time
     recordWakeUp(today, actualWakeTime);
     
     document.getElementById('brush-snap-component')?.scrollIntoView({ 
@@ -236,7 +215,6 @@ const SmartWakeUpPlan = () => {
     });
   };
   
-  // Function to request to set a native alarm
   const requestSetNativeAlarm = async (time: string) => {
     if (!NativeBridge.isNativePlatform()) {
       toast({
@@ -248,7 +226,6 @@ const SmartWakeUpPlan = () => {
     }
     
     if (NativeBridge.getPlatform() === 'ios') {
-      // On iOS, we'd use Siri Shortcuts
       await NativeBridge.openSiriShortcutForAlarm(time);
       
       toast({
@@ -257,13 +234,23 @@ const SmartWakeUpPlan = () => {
         duration: 3000,
       });
     } else {
-      // For Android, we'd need a different approach
       toast({
         title: "Feature In Development",
         description: "Setting alarms on Android will be available soon.",
         duration: 3000,
       });
     }
+  };
+  
+  const formatDateRange = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+      return `${start.toLocaleDateString(undefined, { month: 'short' })} ${start.getDate()} - ${end.getDate()}`;
+    }
+    
+    return `${start.toLocaleDateString(undefined, { month: 'short' })} ${start.getDate()} - ${end.toLocaleDateString(undefined, { month: 'short' })} ${end.getDate()}`;
   };
   
   return (
@@ -382,7 +369,6 @@ const SmartWakeUpPlan = () => {
                   </p>
                 </div>
                 
-                {/* Add new button for setting a native alarm */}
                 <Button
                   onClick={() => requestSetNativeAlarm(nextWakeUp.time)}
                   className="mt-3 w-full bg-indigo hover:bg-indigo/90 text-white"
@@ -417,32 +403,39 @@ const SmartWakeUpPlan = () => {
             
             <div className="mt-4">
               <p className="text-sm font-medium text-indigo mb-2">Wake-Up Schedule</p>
-              <div className="max-h-40 overflow-y-auto pr-2 space-y-2">
-                {wakeUpPlan.intervals.map((interval, index) => (
+              <div className="max-h-40 overflow-y-auto pr-2 space-y-3">
+                {wakeUpPlan && groupIntervalsByWakeTime(wakeUpPlan.intervals).map((block, index) => (
                   <div 
                     key={index}
                     className={`p-3 rounded-lg border flex justify-between items-center
-                      ${interval.completed 
-                        ? 'bg-emerald-50 border-emerald-200' 
+                      ${block.hasCompleted 
+                        ? 'bg-emerald-50/50 border-emerald-200/70' 
                         : 'bg-white border-lilac/20'}
-                      ${interval.isAdjusted ? 'border-l-2 border-l-coral' : ''}`}
+                      ${block.hasAdjusted ? 'border-l-2 border-l-coral' : ''}`}
                   >
                     <div className="flex items-center gap-2">
                       <div 
-                        className={`w-3 h-3 rounded-full 
-                          ${interval.completed ? 'bg-emerald-400' : 'bg-indigo/20'}`}
-                      />
-                      <span className="font-medium">{interval.wakeTime}</span>
-                      {interval.isAdjusted && (
-                        <span className="text-[10px] text-coral ml-1">(adjusted)</span>
-                      )}
+                        className={`w-8 h-8 rounded-md flex items-center justify-center 
+                          ${block.hasCompleted ? 'bg-emerald-50 text-emerald-600' : 'bg-skyblue/10 text-indigo'}`}
+                      >
+                        <span className="text-sm font-medium">{block.wakeTime}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-indigo">
+                          {formatDateRange(block.startDate, block.endDate)}
+                        </p>
+                        <p className="text-xs text-indigo/70">
+                          {block.daysCount} {block.daysCount === 1 ? 'day' : 'days'}
+                          {block.hasAdjusted && <span className="text-coral ml-2">(adjusted)</span>}
+                        </p>
+                      </div>
                     </div>
-                    <span className="text-sm text-indigo/70">
-                      {new Date(interval.date).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric'
-                      })}
-                    </span>
+                    
+                    {block.allCompleted && (
+                      <div className="bg-emerald-100 text-emerald-600 text-xs px-2 py-1 rounded-full">
+                        Completed
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

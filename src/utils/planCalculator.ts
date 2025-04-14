@@ -352,3 +352,73 @@ export function analyzeWakeUpPlan(plan: WakeUpPlan): {
   
   return { needsReset: false, reason: null, latestWakeTime: null };
 }
+
+/**
+ * Group intervals by wake time into blocks
+ */
+export function groupIntervalsByWakeTime(intervals: WakeUpPlan['intervals']) {
+  // Sort intervals by date first
+  const sortedIntervals = [...intervals].sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  
+  const blocks: {
+    wakeTime: string;
+    startDate: string;
+    endDate: string;
+    daysCount: number;
+    hasCompleted: boolean;
+    allCompleted: boolean;
+    hasAdjusted: boolean;
+  }[] = [];
+  
+  let currentBlock: {
+    wakeTime: string;
+    startDate: string;
+    endDate: string;
+    intervalIndices: number[];
+    hasCompleted: boolean;
+    allCompleted: boolean;
+    hasAdjusted: boolean;
+  } | null = null;
+  
+  sortedIntervals.forEach((interval, index) => {
+    if (!currentBlock || currentBlock.wakeTime !== interval.wakeTime) {
+      // If we have a current block, add it to blocks
+      if (currentBlock) {
+        blocks.push({
+          ...currentBlock,
+          daysCount: currentBlock.intervalIndices.length,
+        });
+      }
+      
+      // Start a new block
+      currentBlock = {
+        wakeTime: interval.wakeTime,
+        startDate: interval.date,
+        endDate: interval.date,
+        intervalIndices: [index],
+        hasCompleted: interval.completed,
+        allCompleted: interval.completed,
+        hasAdjusted: !!interval.isAdjusted
+      };
+    } else {
+      // Continue the current block
+      currentBlock.endDate = interval.date;
+      currentBlock.intervalIndices.push(index);
+      currentBlock.hasCompleted = currentBlock.hasCompleted || interval.completed;
+      currentBlock.allCompleted = currentBlock.allCompleted && interval.completed;
+      currentBlock.hasAdjusted = currentBlock.hasAdjusted || !!interval.isAdjusted;
+    }
+  });
+  
+  // Add the last block if it exists
+  if (currentBlock) {
+    blocks.push({
+      ...currentBlock,
+      daysCount: currentBlock.intervalIndices.length,
+    });
+  }
+  
+  return blocks;
+}

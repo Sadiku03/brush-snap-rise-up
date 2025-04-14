@@ -1,4 +1,3 @@
-
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useUserStore } from '@/store/userStore';
 import { useEffect, useState } from 'react';
@@ -119,11 +118,9 @@ const ProgressMap = () => {
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-1 bg-lilac/20 px-2 py-1 rounded-full">
-                  <Calendar className="h-3 w-3 text-coral" />
-                  <span className="text-xs font-medium text-indigo">
-                    {brushSnaps.length} Wake-Up Checks
-                  </span>
+                {/* Replace the existing badge with a simple target time display */}
+                <div className="text-xs font-medium text-indigo">
+                  {wakeUpPlan?.intervals[0]?.wakeTime || 'No target set'}
                 </div>
               </div>
               

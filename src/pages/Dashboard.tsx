@@ -1,17 +1,17 @@
-
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useUserStore } from '@/store/userStore';
 import SmartWakeUpPlan from '@/components/SmartWakeUpPlan';
 import { getNextWakeUpTime, calculateWakeUpPlan, analyzeWakeUpPlan } from '@/utils/planCalculator';
 import ScheduleCalendar from '@/components/ScheduleCalendar';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import RecalculatePlanModal from '@/components/RecalculatePlanModal';
 
 const Dashboard = () => {
   const { name, wakeUpPlan, progress, setWakeUpPlan, setShowRecalculationModal } = useUserStore();
   const { toast } = useToast();
+  const [autoRefreshed, setAutoRefreshed] = useState(false);
   
   // Get the next wake-up time from the plan
   const nextWakeUp = wakeUpPlan ? getNextWakeUpTime(wakeUpPlan) : null;
@@ -46,12 +46,22 @@ const Dashboard = () => {
     // Update the plan in the store
     setWakeUpPlan(updatedPlan);
 
-    toast({
-      title: "Wake-up Plan Refreshed",
-      description: "Your plan has been updated with the improved calculation.",
-      duration: 3000,
-    });
+    if (!autoRefreshed) {
+      toast({
+        title: "Wake-up Plan Updated",
+        description: "Your plan has been automatically refreshed with the latest calculations.",
+        duration: 3000,
+      });
+      setAutoRefreshed(true);
+    }
   };
+  
+  // Automatically refresh plan on component mount
+  useEffect(() => {
+    if (wakeUpPlan && !autoRefreshed) {
+      handleRefreshPlan();
+    }
+  }, [wakeUpPlan]); // Only depend on wakeUpPlan to avoid infinite refreshes
   
   // Function to manually open recalculation modal
   const handleOpenRecalculationModal = () => {
@@ -80,16 +90,6 @@ const Dashboard = () => {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-medium text-indigo">Schedule Calendar</h2>
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleRefreshPlan}
-                  className="text-indigo/70 hover:text-indigo flex items-center gap-1 text-xs py-1"
-                >
-                  <RefreshCw className="h-3 w-3" />
-                  <span>Refresh Plan</span>
-                </Button>
-                
                 <Button
                   variant={planAnalysis.needsReset ? "default" : "outline"}
                   size="sm"

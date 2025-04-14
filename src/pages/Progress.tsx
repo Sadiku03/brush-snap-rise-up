@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import ProgressMap from '@/components/ProgressMap';
 import { useUserStore } from '@/store/userStore';
 import { calculateWakeUpPlan, analyzeWakeUpPlan } from '@/utils/planCalculator';
-import { Button } from '@/components/ui/button';  // Add this import
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { RefreshCw, AlertTriangle, Clock } from 'lucide-react';
 import RecalculatePlanModal from '@/components/RecalculatePlanModal';
@@ -21,6 +21,7 @@ const Progress = () => {
   } = useUserStore();
   const { toast } = useToast();
   const [autoAdjusted, setAutoAdjusted] = useState(false);
+  const [autoRefreshed, setAutoRefreshed] = useState(false);
 
   // Function to refresh the wake-up plan with the latest calculation logic
   const handleRefreshPlan = () => {
@@ -48,12 +49,22 @@ const Progress = () => {
 
     setWakeUpPlan(updatedPlan);
 
-    toast({
-      title: "Wake-up Plan Refreshed",
-      description: "Your plan has been updated with the improved calculation.",
-      duration: 3000,
-    });
+    if (!autoRefreshed) {
+      toast({
+        title: "Wake-up Plan Updated",
+        description: "Your plan has been automatically refreshed with the latest calculations.",
+        duration: 3000,
+      });
+      setAutoRefreshed(true);
+    }
   };
+  
+  // Automatically refresh plan on component mount
+  useEffect(() => {
+    if (wakeUpPlan && !autoRefreshed) {
+      handleRefreshPlan();
+    }
+  }, [wakeUpPlan]); // Only depend on wakeUpPlan to avoid infinite refreshes
   
   // Analyze plan to see if it needs adjustment
   const planAnalysis = wakeUpPlan ? analyzeWakeUpPlan(wakeUpPlan) : { needsReset: false, reason: null };
@@ -96,19 +107,6 @@ const Progress = () => {
           <h1 className="text-xl font-bold text-indigo mb-1">Your Progress</h1>
           <p className="text-sm text-indigo/70">Track your sleep journey</p>
         </div>
-        {wakeUpPlan && (
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefreshPlan}
-              className="text-indigo/70 hover:text-indigo flex items-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span>Refresh Plan</span>
-            </Button>
-          </div>
-        )}
       </div>
       
       {/* Display an alert if plan was automatically adjusted */}
@@ -118,6 +116,17 @@ const Progress = () => {
           <AlertTitle className="text-indigo">Your wake-up plan was automatically adjusted</AlertTitle>
           <AlertDescription>
             Due to missed check-ins, your schedule has been recalculated to keep you on track for your target date.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {/* Display an alert if plan was automatically refreshed */}
+      {wakeUpPlan && autoRefreshed && (
+        <Alert className="bg-skyblue/10 text-indigo border-skyblue/20 mb-4">
+          <RefreshCw className="h-4 w-4" />
+          <AlertTitle className="text-indigo">Your wake-up plan has been refreshed</AlertTitle>
+          <AlertDescription>
+            Your schedule has been automatically updated with the latest calculation improvements.
           </AlertDescription>
         </Alert>
       )}

@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from 'react';
 import { useUserStore } from '@/store/userStore';
 import SmartWakeUpPlan from '@/components/SmartWakeUpPlan';
@@ -13,21 +12,17 @@ const Dashboard = () => {
   const [autoRefreshed, setAutoRefreshed] = useState(false);
   const refreshedRef = useRef(false);
   
-  // Get the next wake-up time from the plan
   const nextWakeUp = wakeUpPlan ? getNextWakeUpTime(wakeUpPlan) : null;
   
-  // Function to refresh the wake-up plan with the latest calculation logic
   const handleRefreshPlan = () => {
     if (!wakeUpPlan || refreshedRef.current) return;
 
-    // Recalculate the plan with the same parameters but using the updated algorithm
     const refreshedPlan = calculateWakeUpPlan(
       wakeUpPlan.currentWakeTime,
       wakeUpPlan.targetWakeTime,
       wakeUpPlan.targetDate
     );
 
-    // Preserve completed status from the original plan
     const updatedPlan = {
       ...refreshedPlan,
       intervals: refreshedPlan.intervals.map(newInterval => {
@@ -39,11 +34,9 @@ const Dashboard = () => {
           completed: originalInterval ? originalInterval.completed : false
         };
       }),
-      // Preserve adjustment history if any
       adjustmentHistory: wakeUpPlan.adjustmentHistory || []
     };
 
-    // Update the plan in the store
     setWakeUpPlan(updatedPlan);
     refreshedRef.current = true;
 
@@ -57,17 +50,14 @@ const Dashboard = () => {
     }
   };
   
-  // Automatically refresh plan on component mount
   useEffect(() => {
     if (wakeUpPlan && !refreshedRef.current) {
       handleRefreshPlan();
     }
-  }, [wakeUpPlan]); // Only depend on wakeUpPlan to avoid infinite refreshes
+  }, [wakeUpPlan]);
   
-  // Analyze plan to see if it needs adjustment
   const planAnalysis = wakeUpPlan ? analyzeWakeUpPlan(wakeUpPlan) : { needsReset: false };
   
-  // Automatically check for disruptions on component mount
   useEffect(() => {
     if (wakeUpPlan && planAnalysis.needsReset) {
       const timer = setTimeout(() => {
@@ -94,7 +84,6 @@ const Dashboard = () => {
         
         {wakeUpPlan && (
           <div>
-            <h2 className="text-sm font-medium text-indigo mb-3">Schedule Calendar</h2>
             <div className="flex justify-center">
               <ScheduleCalendar wakeUpPlan={wakeUpPlan} />
             </div>
@@ -102,13 +91,11 @@ const Dashboard = () => {
         )}
       </div>
       
-      {/* Add the recalculation modal */}
       <RecalculatePlanModal />
     </div>
   );
 };
 
-// Helper function to determine the time of day
 function getTimeOfDay() {
   const hour = new Date().getHours();
   
@@ -123,7 +110,6 @@ function getTimeOfDay() {
   }
 }
 
-// Helper function to generate welcome message
 function getWelcomeMessage(streak: number, nextWakeUp: { date: string; time: string } | null) {
   if (streak === 0) {
     return "Welcome to your sleep journey! Set up your wake-up plan to get started.";
@@ -146,7 +132,6 @@ function getWelcomeMessage(streak: number, nextWakeUp: { date: string; time: str
   return `You're on a ${streak}-day streak! Keep up the great work.`;
 }
 
-// Helper function to format date
 function formatDate(dateString: string) {
   const date = new Date(dateString);
   return date.toLocaleDateString(undefined, {

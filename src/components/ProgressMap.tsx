@@ -1,11 +1,9 @@
-
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useUserStore } from '@/store/userStore';
-import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ChartDataPoint {
   date: string;
@@ -19,7 +17,6 @@ interface ChartDataPoint {
 
 const ProgressMap = () => {
   const { wakeUpPlan, brushSnaps } = useUserStore();
-  const [expanded, setExpanded] = useState(false);
   const isMobile = useIsMobile();
 
   const formatMinutes = (minutes: number) => {
@@ -69,7 +66,6 @@ const ProgressMap = () => {
   
   const chartData = getChartData();
   
-  // Calculate the min and max values for the Y axis to ensure all points are covered
   const getYAxisDomain = () => {
     if (!chartData.length) return [360, 540]; // Default range if no data
     
@@ -86,7 +82,6 @@ const ProgressMap = () => {
       }
     });
     
-    // Add padding (30 minutes) to ensure points aren't at the edges
     return [Math.max(0, minValue - 30), maxValue + 30];
   };
   
@@ -113,17 +108,9 @@ const ProgressMap = () => {
     <div className="w-full space-y-6 py-4">
       <div className="flex flex-row justify-between items-center">
         <h3 className="text-xl font-bold text-indigo">Your Sleep Journey</h3>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => setExpanded(!expanded)} 
-          className="text-indigo/70"
-        >
-          {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-        </Button>
       </div>
       
-      <div className={`transition-all duration-300 ${expanded ? 'max-h-[600px]' : 'max-h-[400px]'} overflow-hidden`}>
+      <div className="max-h-[650px]">
         {wakeUpPlan ? (
           <div className="space-y-5">
             <div className="flex justify-between items-center">
@@ -142,7 +129,7 @@ const ProgressMap = () => {
               </div>
             </div>
             
-            <div className={`${expanded ? 'h-[400px]' : 'h-[300px]'} mt-4`}>
+            <div className="h-[300px] mt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
@@ -223,10 +210,10 @@ const ProgressMap = () => {
               </ResponsiveContainer>
             </div>
             
-            {expanded && (
-              <div className="pt-2 space-y-3">
-                <h3 className="font-semibold text-indigo text-sm">Wake-Up Milestones</h3>
-                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+            <div className="pt-2 space-y-3">
+              <h3 className="font-semibold text-indigo text-sm">Wake-Up Milestones</h3>
+              <ScrollArea className="h-[180px] pr-1">
+                <div className="space-y-2">
                   {wakeUpPlan.intervals.map((interval, index) => {
                     const brushSnap = brushSnaps.find(snap => snap.date === interval.date);
                     return (
@@ -265,8 +252,8 @@ const ProgressMap = () => {
                     );
                   })}
                 </div>
-              </div>
-            )}
+              </ScrollArea>
+            </div>
           </div>
         ) : (
           <div className="text-center py-12">

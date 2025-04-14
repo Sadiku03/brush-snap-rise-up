@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Award, Star, RefreshCw, Info } from "lucide-react";
@@ -39,8 +38,8 @@ const QuestSystem = () => {
   const { toast } = useToast();
   const [refreshing, setRefreshing] = useState(false);
   const [questsRefreshed, setQuestsRefreshed] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   
-  // Combine available and completed quests for history view
   const questHistory = useQuestHistory(availableQuests, completedQuests);
   
   const streakMultiplier = (1 + (progress.streak * 0.1)).toFixed(1);
@@ -98,9 +97,6 @@ const QuestSystem = () => {
       setQuestsRefreshed(true);
     }
   }, [refreshDailyQuests]);
-  
-  // Combine all quests and sort by completion status
-  const allQuests = [...availableQuests, ...completedQuests];
   
   return (
     <div className="bg-white rounded-xl shadow-md border border-lilac/20 overflow-hidden">
@@ -179,8 +175,7 @@ const QuestSystem = () => {
         
         <div className="space-y-6">
           <div>
-            <h3 className="text-sm font-semibold text-indigo/60 uppercase tracking-wider mb-3">All Quests</h3>
-            {/* Display available quests first so they can be completed */}
+            <h3 className="text-sm font-semibold text-indigo/60 uppercase tracking-wider mb-3">Available Quests</h3>
             <QuestList 
               quests={availableQuests}
               onCompleteQuest={handleCompleteQuest}
@@ -189,21 +184,11 @@ const QuestSystem = () => {
               emptyMessage="You've completed all quests for today! New quests will be available tomorrow."
               showDetails={false}
             />
-            
-            {/* Then display completed quests */}
-            {completedQuests.length > 0 && (
-              <QuestList 
-                quests={completedQuests}
-                isCompleted={true}
-                streakMultiplier={streakMultiplier}
-                showDetails={false}
-              />
-            )}
           </div>
           
-          {(availableQuests.length > 0 || completedQuests.length > 0) && (
+          {completedQuests.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-sm font-semibold text-indigo/60 uppercase tracking-wider mb-3">Quest History</h3>
+              <h3 className="text-sm font-semibold text-indigo/60 uppercase tracking-wider mb-3">Completed Quests</h3>
               <QuestCalendarView 
                 completedQuests={completedQuests}
                 allHistoricalQuests={questHistory.byDate}

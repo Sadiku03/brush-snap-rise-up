@@ -1,4 +1,3 @@
-
 import { WakeUpPlan } from "../store/userStore";
 
 /**
@@ -55,7 +54,8 @@ export function calculateWakeUpPlan(
     const blockIndex = Math.floor(day / blockDays);
     
     // Calculate minutes to adjust based on the block
-    const minutesToAdjust = blockIndex * adjustmentPerBlock;
+    // Apply the first decrement immediately instead of starting at 0
+    const minutesToAdjust = (blockIndex + 1) * adjustmentPerBlock;
     
     let adjustedMinutes = currentWakeMinutes;
     

@@ -87,7 +87,7 @@ const ProgressMap = () => {
   };
   
   return (
-    <Card className="overflow-hidden border-lilac/20 shadow-md w-[98%] sm:w-[95%] mx-auto rounded-xl">
+    <Card className="w-[98%] sm:w-[95%] mx-auto rounded-xl overflow-hidden border-lilac/20 shadow-md">
       <CardHeader className="bg-skyblue/20 border-b border-lilac/10 p-4 flex flex-row justify-between items-center space-y-0">
         <CardTitle className="text-xl font-bold text-indigo">Your Sleep Journey</CardTitle>
         <Button 

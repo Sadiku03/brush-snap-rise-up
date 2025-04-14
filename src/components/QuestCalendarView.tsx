@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { format, addMonths, subMonths } from "date-fns";
-import { CalendarIcon, CheckCircle, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarIcon, CheckCircle, XCircle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -11,6 +11,11 @@ import {
 } from "@/components/ui/popover";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { 
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Quest } from '@/store/userStore';
 import { useUserStore } from '@/store/userStore';
 import { cn } from "@/lib/utils";
@@ -30,6 +35,10 @@ const QuestCalendarView = ({
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const { progress } = useUserStore();
+  
+  // New state for collapsible sections
+  const [completedExpanded, setCompletedExpanded] = useState(true);
+  const [uncompletedExpanded, setUncompletedExpanded] = useState(true);
   
   // Format the selected date as YYYY-MM-DD for lookup
   const selectedDateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
@@ -195,44 +204,74 @@ const QuestCalendarView = ({
             
             {/* Completed quests for this day */}
             {selectedDayQuests.completed.length > 0 && (
-              <div className="mb-4">
-                <div className="flex items-center gap-1 mb-2">
-                  <CheckCircle className="h-4 w-4 text-emerald-500" />
-                  <h4 className="text-sm font-medium text-indigo/80">Completed</h4>
+              <Collapsible
+                open={completedExpanded}
+                onOpenChange={setCompletedExpanded}
+                className="mb-4 border border-emerald-100 rounded-lg overflow-hidden"
+              >
+                <div className="bg-emerald-50 p-3">
+                  <CollapsibleTrigger className="flex items-center gap-1 w-full justify-between">
+                    <div className="flex items-center gap-1">
+                      <CheckCircle className="h-4 w-4 text-emerald-500" />
+                      <h4 className="text-sm font-medium text-indigo/80">Completed</h4>
+                    </div>
+                    {completedExpanded ? (
+                      <ChevronUp className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-emerald-500" />
+                    )}
+                  </CollapsibleTrigger>
                 </div>
-                <div className="space-y-2">
-                  {selectedDayQuests.completed.map(quest => (
-                    <QuestItem 
-                      key={quest.id}
-                      quest={quest}
-                      isCompleted={true}
-                      streakMultiplier="1.0"
-                      showDetails={true}
-                    />
-                  ))}
-                </div>
-              </div>
+                <CollapsibleContent className="p-3 bg-white">
+                  <div className="space-y-2">
+                    {selectedDayQuests.completed.map(quest => (
+                      <QuestItem 
+                        key={quest.id}
+                        quest={quest}
+                        isCompleted={true}
+                        streakMultiplier="1.0"
+                        showDetails={true}
+                      />
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
             
             {/* Uncompleted quests for this day */}
             {selectedDayQuests.uncompleted.length > 0 && (
-              <div>
-                <div className="flex items-center gap-1 mb-2">
-                  <XCircle className="h-4 w-4 text-coral/70" />
-                  <h4 className="text-sm font-medium text-indigo/80">Not completed</h4>
+              <Collapsible
+                open={uncompletedExpanded}
+                onOpenChange={setUncompletedExpanded}
+                className="border border-coral/20 rounded-lg overflow-hidden"
+              >
+                <div className="bg-coral/10 p-3">
+                  <CollapsibleTrigger className="flex items-center gap-1 w-full justify-between">
+                    <div className="flex items-center gap-1">
+                      <XCircle className="h-4 w-4 text-coral/70" />
+                      <h4 className="text-sm font-medium text-indigo/80">Not completed</h4>
+                    </div>
+                    {uncompletedExpanded ? (
+                      <ChevronUp className="h-4 w-4 text-coral/70" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-coral/70" />
+                    )}
+                  </CollapsibleTrigger>
                 </div>
-                <div className="space-y-2">
-                  {selectedDayQuests.uncompleted.map(quest => (
-                    <QuestItem 
-                      key={quest.id}
-                      quest={quest}
-                      isCompleted={false}
-                      streakMultiplier="1.0"
-                      showDetails={true}
-                    />
-                  ))}
-                </div>
-              </div>
+                <CollapsibleContent className="p-3 bg-white">
+                  <div className="space-y-2">
+                    {selectedDayQuests.uncompleted.map(quest => (
+                      <QuestItem 
+                        key={quest.id}
+                        quest={quest}
+                        isCompleted={false}
+                        streakMultiplier="1.0"
+                        showDetails={true}
+                      />
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
           </CardContent>
         </Card>

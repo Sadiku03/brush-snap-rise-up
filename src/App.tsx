@@ -1,8 +1,9 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useUserStore } from "@/store/userStore";
 import Index from "./pages/Index";
 import AppLayout from "./pages/AppLayout";
@@ -10,6 +11,27 @@ import NotFound from "./pages/NotFound";
 import OnboardingFlow from "./components/OnboardingFlow";
 
 const queryClient = new QueryClient();
+
+// Mobile frame wrapper component
+const MobileFrame = ({ children }: { children: React.ReactNode }) => {
+  const location = useLocation();
+  const isAppRoute = location.pathname.startsWith('/app');
+  
+  if (!isAppRoute) {
+    return <>{children}</>;
+  }
+  
+  return (
+    <div className="mobile-frame-container">
+      <div className="mobile-frame">
+        <div className="mobile-frame-notch"></div>
+        <div className="mobile-frame-content">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -40,9 +62,11 @@ const App = () => (
           <Route 
             path="/app/*" 
             element={
-              <ProtectedRoute>
-                <AppLayout />
-              </ProtectedRoute>
+              <MobileFrame>
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              </MobileFrame>
             } 
           />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

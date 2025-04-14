@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useUserStore } from '@/store/userStore';
 import Avatar from '@/components/Avatar';
-import { User, AtSign, AlertCircle } from 'lucide-react';
+import { User, AtSign, AlertCircle, Settings, Edit, Star, Award, Calendar } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Profile = () => {
   const { name, email, setUser, resetProgress } = useUserStore();
@@ -42,19 +43,20 @@ const Profile = () => {
   };
   
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-6 px-4 pb-8">
+      <div className="mb-2">
         <h1 className="text-2xl font-bold text-indigo mb-1">Profile</h1>
         <p className="text-indigo/70">Manage your account and progress</p>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-md border border-lilac/20 overflow-hidden">
-          <div className="bg-skyblue/20 border-b border-lilac/10 p-4">
-            <h2 className="text-xl font-bold text-indigo">Your Profile</h2>
-          </div>
+      <div className="space-y-6">
+        {/* Profile card - optimized for mobile */}
+        <Card className="border border-lilac/20 shadow-md overflow-hidden">
+          <CardHeader className="bg-skyblue/20 border-b border-lilac/10 pb-4">
+            <CardTitle className="text-xl font-bold text-indigo">Your Profile</CardTitle>
+          </CardHeader>
           
-          <div className="p-5">
+          <CardContent className="p-5">
             {editMode ? (
               <div className="space-y-4">
                 <div>
@@ -109,76 +111,75 @@ const Profile = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center justify-center mb-6">
-                  <div className="w-24 h-24 bg-lilac/20 rounded-full flex items-center justify-center text-3xl font-bold text-indigo">
+                {/* User avatar - centered on mobile */}
+                <div className="flex flex-col items-center justify-center mb-6">
+                  <div className="w-24 h-24 bg-lilac/20 rounded-full flex items-center justify-center text-3xl font-bold text-indigo mb-3">
                     {name ? name.charAt(0).toUpperCase() : '?'}
                   </div>
+                  <h3 className="text-lg font-semibold text-indigo">{name || 'Not set'}</h3>
+                  <p className="text-sm text-indigo/70">{email || <span className="italic">Email not provided</span>}</p>
                 </div>
                 
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center pb-2 border-b border-lilac/10">
-                    <span className="text-indigo/70">Name</span>
-                    <span className="font-medium text-indigo">{name || 'Not set'}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center pb-2 border-b border-lilac/10">
-                    <span className="text-indigo/70">Email</span>
-                    <span className="font-medium text-indigo">{email || 'Not set'}</span>
-                  </div>
-                </div>
-                
-                <div className="pt-4">
-                  <Button
-                    onClick={() => setEditMode(true)}
-                    className="w-full btn-primary"
-                  >
-                    Edit Profile
-                  </Button>
-                </div>
+                <Button
+                  onClick={() => setEditMode(true)}
+                  className="w-full btn-primary flex items-center justify-center gap-2"
+                >
+                  <Edit size={18} />
+                  Edit Profile
+                </Button>
               </div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
         
-        <Avatar />
-        
-        <div className="bg-white rounded-xl shadow-md border border-lilac/20 overflow-hidden lg:col-span-2">
-          <div className="bg-skyblue/20 border-b border-lilac/10 p-4">
-            <h2 className="text-xl font-bold text-indigo">Settings</h2>
-          </div>
+        {/* Sleep companion - optimized for mobile */}
+        <Card className="border border-lilac/20 shadow-md overflow-hidden">
+          <CardHeader className="bg-skyblue/20 border-b border-lilac/10 pb-4">
+            <CardTitle className="text-xl font-bold text-indigo">Sleep Companion</CardTitle>
+          </CardHeader>
           
-          <div className="p-5">
+          <CardContent className="p-5">
+            <Avatar />
+          </CardContent>
+        </Card>
+        
+        {/* Settings card */}
+        <Card className="border border-lilac/20 shadow-md overflow-hidden">
+          <CardHeader className="bg-skyblue/20 border-b border-lilac/10 pb-4">
+            <CardTitle className="text-xl font-bold text-indigo flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Settings
+            </CardTitle>
+          </CardHeader>
+          
+          <CardContent className="p-5">
             <div className="space-y-5">
               <div className="border-b border-lilac/10 pb-5">
                 <h3 className="font-semibold text-indigo mb-3">Account</h3>
                 
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                     <div>
                       <p className="font-medium text-indigo">App Notifications</p>
                       <p className="text-sm text-indigo/70">
                         Receive reminders about quests and wake-up times
                       </p>
                     </div>
-                    <div>
-                      <Button variant="outline" className="border-lilac/30">
-                        Coming Soon
-                      </Button>
-                    </div>
+                    <Button variant="outline" className="border-lilac/30 whitespace-nowrap self-start sm:self-center mt-1 sm:mt-0">
+                      Coming Soon
+                    </Button>
                   </div>
                   
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                     <div>
                       <p className="font-medium text-indigo">Data Export</p>
                       <p className="text-sm text-indigo/70">
                         Download all your progress and statistics
                       </p>
                     </div>
-                    <div>
-                      <Button variant="outline" className="border-lilac/30">
-                        Coming Soon
-                      </Button>
-                    </div>
+                    <Button variant="outline" className="border-lilac/30 whitespace-nowrap self-start sm:self-center mt-1 sm:mt-0">
+                      Coming Soon
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -188,7 +189,7 @@ const Profile = () => {
                 
                 {showResetConfirm ? (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
+                    <div className="flex flex-col sm:flex-row items-start gap-3">
                       <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="font-medium text-red-700 mb-2">
@@ -198,7 +199,7 @@ const Profile = () => {
                           This will delete your wake-up plan, quests, streak, and all statistics. 
                           This action cannot be undone.
                         </p>
-                        <div className="flex gap-3">
+                        <div className="flex flex-col sm:flex-row gap-3 w-full">
                           <Button
                             variant="outline"
                             onClick={() => setShowResetConfirm(false)}
@@ -218,27 +219,26 @@ const Profile = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                     <div>
                       <p className="font-medium text-indigo">Reset Progress</p>
                       <p className="text-sm text-indigo/70">
                         Delete all your data and start over
                       </p>
                     </div>
-                    <div>
-                      <Button 
-                        variant="destructive"
-                        onClick={() => setShowResetConfirm(true)}
-                      >
-                        Reset
-                      </Button>
-                    </div>
+                    <Button 
+                      variant="destructive"
+                      onClick={() => setShowResetConfirm(true)}
+                      className="self-start sm:self-center mt-1 sm:mt-0"
+                    >
+                      Reset
+                    </Button>
                   </div>
                 )}
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

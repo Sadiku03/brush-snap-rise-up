@@ -57,6 +57,7 @@ const QuestSystem = () => {
   
   const weeklyStreakProgress = Math.min(progress.streak / 7, 1) * 100;
 
+  // Filter completed quests for today only
   const todayStr = new Date().toISOString().split('T')[0];
   const todayCompletedQuests = completedQuests.filter(quest => {
     const questCompletedDate = quest.dateCompleted ? new Date(quest.dateCompleted).toISOString().split('T')[0] : null;

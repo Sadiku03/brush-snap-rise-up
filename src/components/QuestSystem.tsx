@@ -15,8 +15,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Progress } from "@/components/ui/progress";
 import QuestList from './QuestList';
+import QuestCalendarView from './QuestCalendarView';
+import { useQuestHistory } from '@/hooks/useQuestHistory';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Function to calculate XP with streak bonus (same as in store)
 const calculateXpWithStreak = (baseXp: number, streak: number): number => {
@@ -39,6 +41,10 @@ const QuestSystem = () => {
   const { toast } = useToast();
   const [refreshing, setRefreshing] = useState(false);
   const [questsRefreshed, setQuestsRefreshed] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  
+  // Get quest history
+  const questHistory = useQuestHistory(availableQuests, completedQuests);
   
   // Calculate the current streak multiplier
   const streakMultiplier = (1 + (progress.streak * 0.1)).toFixed(1);
@@ -198,19 +204,35 @@ const QuestSystem = () => {
           
           {completedQuests.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-sm font-semibold text-indigo/60 uppercase tracking-wider mb-3">Completed Quests</h3>
-              <QuestList 
-                quests={completedQuests.slice(0, 5)}
-                isCompleted={true}
-                streakMultiplier={streakMultiplier}
-                showDetails={false}
-              />
-              
-              {completedQuests.length > 5 && (
-                <p className="text-sm text-center text-indigo/60 mt-2">
-                  +{completedQuests.length - 5} more completed quests
-                </p>
-              )}
+              <Tabs defaultValue="calendar" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="list">List View</TabsTrigger>
+                  <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="list" className="mt-0">
+                  <h3 className="text-sm font-semibold text-indigo/60 uppercase tracking-wider mb-3">Completed Quests</h3>
+                  <QuestList 
+                    quests={completedQuests.slice(0, 5)}
+                    isCompleted={true}
+                    streakMultiplier={streakMultiplier}
+                    showDetails={false}
+                  />
+                  
+                  {completedQuests.length > 5 && (
+                    <p className="text-sm text-center text-indigo/60 mt-2">
+                      +{completedQuests.length - 5} more completed quests
+                    </p>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="calendar" className="mt-0">
+                  <QuestCalendarView 
+                    completedQuests={completedQuests}
+                    allHistoricalQuests={questHistory.byDate}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </div>

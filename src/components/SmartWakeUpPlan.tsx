@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,7 @@ const SmartWakeUpPlan = () => {
   const { toast } = useToast();
   
   const nextWakeUp = wakeUpPlan ? getNextWakeUpTime(wakeUpPlan) : null;
+  const checkWindowRef = useRef(false);
   
   const forceShowCheckIn = false; // Changed to false to disable forced check-in
   
@@ -125,14 +127,17 @@ const SmartWakeUpPlan = () => {
     scheduleNewNotifications();
   }, [wakeUpPlan, notificationsEnabled, toast]);
   
+  // Fix the infinite loop by using a ref to track whether we've already set the state
   useEffect(() => {
     if (!wakeUpPlan || !nextWakeUp) return;
     
+    // This function runs once on mount and when dependencies change
     const checkWindow = () => {
       const now = new Date();
       const today = now.toISOString().split('T')[0];
       
       if (nextWakeUp.date !== today) {
+        // Don't need the check to prevent loops here since this is a terminal condition
         setShowCheckIn(forceShowCheckIn);
         return;
       }
@@ -146,11 +151,15 @@ const SmartWakeUpPlan = () => {
       const fiveMinutes = 5 * 60 * 1000;
       
       const timeDiff = Math.abs(now.getTime() - wakeUpDate.getTime());
+      const shouldShow = forceShowCheckIn || timeDiff <= fiveMinutes;
       
-      setShowCheckIn(forceShowCheckIn || timeDiff <= fiveMinutes);
+      // Only set state if necessary
+      if (shouldShow !== showCheckIn) {
+        setShowCheckIn(shouldShow);
+      }
       
-      // Set actual wake time to current time
-      if (!actualWakeTime && (forceShowCheckIn || timeDiff <= fiveMinutes)) {
+      // Set actual wake time to current time if needed and it's not already set
+      if (shouldShow && !actualWakeTime) {
         const hours = now.getHours().toString().padStart(2, '0');
         const minutes = now.getMinutes().toString().padStart(2, '0');
         setActualWakeTime(`${hours}:${minutes}`);
@@ -160,15 +169,18 @@ const SmartWakeUpPlan = () => {
       console.log("Wake up time:", wakeUpDate.toTimeString());
       console.log("Time difference (ms):", timeDiff);
       console.log("Check-in window (ms):", fiveMinutes);
-      console.log("Should show check-in:", forceShowCheckIn || timeDiff <= fiveMinutes);
+      console.log("Should show check-in:", shouldShow);
     };
     
+    // Initial check
     checkWindow();
     
+    // Set up interval for periodic checks
     const interval = setInterval(checkWindow, 60 * 1000);
     
+    // Clean up interval on unmount
     return () => clearInterval(interval);
-  }, [wakeUpPlan, nextWakeUp, forceShowCheckIn, actualWakeTime]);
+  }, [wakeUpPlan, nextWakeUp, forceShowCheckIn, actualWakeTime, showCheckIn]);
   
   const handleCreatePlan = () => {
     const plan = calculateWakeUpPlan(currentWakeTime, targetWakeTime, targetDate);

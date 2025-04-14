@@ -1,11 +1,10 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import ProgressMap from '@/components/ProgressMap';
 import { useUserStore } from '@/store/userStore';
 import { calculateWakeUpPlan, analyzeWakeUpPlan } from '@/utils/planCalculator';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { RefreshCw, AlertTriangle, Clock } from 'lucide-react';
+import { AlertTriangle, Clock, RefreshCw } from 'lucide-react';
 import RecalculatePlanModal from '@/components/RecalculatePlanModal';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { shouldAutoReplan, autoReplanWakeUpSchedule } from '@/utils/replanner';
@@ -16,16 +15,16 @@ const Progress = () => {
     setWakeUpPlan, 
     setShowRecalculationModal, 
     showRecalculationModal,
-    brushSnaps,
     checkInHistory
   } = useUserStore();
   const { toast } = useToast();
   const [autoAdjusted, setAutoAdjusted] = useState(false);
   const [autoRefreshed, setAutoRefreshed] = useState(false);
+  const refreshedRef = useRef(false);
 
   // Function to refresh the wake-up plan with the latest calculation logic
   const handleRefreshPlan = () => {
-    if (!wakeUpPlan) return;
+    if (!wakeUpPlan || refreshedRef.current) return;
 
     const refreshedPlan = calculateWakeUpPlan(
       wakeUpPlan.currentWakeTime,
@@ -48,20 +47,21 @@ const Progress = () => {
     };
 
     setWakeUpPlan(updatedPlan);
+    refreshedRef.current = true;
 
     if (!autoRefreshed) {
+      setAutoRefreshed(true);
       toast({
         title: "Wake-up Plan Updated",
         description: "Your plan has been automatically refreshed with the latest calculations.",
         duration: 3000,
       });
-      setAutoRefreshed(true);
     }
   };
   
   // Automatically refresh plan on component mount
   useEffect(() => {
-    if (wakeUpPlan && !autoRefreshed) {
+    if (wakeUpPlan && !refreshedRef.current) {
       handleRefreshPlan();
     }
   }, [wakeUpPlan]); // Only depend on wakeUpPlan to avoid infinite refreshes

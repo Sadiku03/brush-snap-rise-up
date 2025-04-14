@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
+
+import { useEffect, useState, useRef } from 'react';
 import { useUserStore } from '@/store/userStore';
 import SmartWakeUpPlan from '@/components/SmartWakeUpPlan';
 import { getNextWakeUpTime, calculateWakeUpPlan, analyzeWakeUpPlan } from '@/utils/planCalculator';
 import ScheduleCalendar from '@/components/ScheduleCalendar';
-import { Button } from '@/components/ui/button';
-import { Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import RecalculatePlanModal from '@/components/RecalculatePlanModal';
 
@@ -12,13 +11,14 @@ const Dashboard = () => {
   const { name, wakeUpPlan, progress, setWakeUpPlan, setShowRecalculationModal } = useUserStore();
   const { toast } = useToast();
   const [autoRefreshed, setAutoRefreshed] = useState(false);
+  const refreshedRef = useRef(false);
   
   // Get the next wake-up time from the plan
   const nextWakeUp = wakeUpPlan ? getNextWakeUpTime(wakeUpPlan) : null;
   
   // Function to refresh the wake-up plan with the latest calculation logic
   const handleRefreshPlan = () => {
-    if (!wakeUpPlan) return;
+    if (!wakeUpPlan || refreshedRef.current) return;
 
     // Recalculate the plan with the same parameters but using the updated algorithm
     const refreshedPlan = calculateWakeUpPlan(
@@ -45,31 +45,38 @@ const Dashboard = () => {
 
     // Update the plan in the store
     setWakeUpPlan(updatedPlan);
+    refreshedRef.current = true;
 
     if (!autoRefreshed) {
+      setAutoRefreshed(true);
       toast({
         title: "Wake-up Plan Updated",
         description: "Your plan has been automatically refreshed with the latest calculations.",
         duration: 3000,
       });
-      setAutoRefreshed(true);
     }
   };
   
   // Automatically refresh plan on component mount
   useEffect(() => {
-    if (wakeUpPlan && !autoRefreshed) {
+    if (wakeUpPlan && !refreshedRef.current) {
       handleRefreshPlan();
     }
   }, [wakeUpPlan]); // Only depend on wakeUpPlan to avoid infinite refreshes
   
-  // Function to manually open recalculation modal
-  const handleOpenRecalculationModal = () => {
-    setShowRecalculationModal(true);
-  };
-  
   // Analyze plan to see if it needs adjustment
   const planAnalysis = wakeUpPlan ? analyzeWakeUpPlan(wakeUpPlan) : { needsReset: false };
+  
+  // Automatically check for disruptions on component mount
+  useEffect(() => {
+    if (wakeUpPlan && planAnalysis.needsReset) {
+      const timer = setTimeout(() => {
+        setShowRecalculationModal(true);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [wakeUpPlan, planAnalysis.needsReset, setShowRecalculationModal]);
   
   return (
     <div className="space-y-6">
@@ -87,24 +94,7 @@ const Dashboard = () => {
         
         {wakeUpPlan && (
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-medium text-indigo">Schedule Calendar</h2>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={planAnalysis.needsReset ? "default" : "outline"}
-                  size="sm"
-                  onClick={handleOpenRecalculationModal}
-                  className={`flex items-center gap-1 text-xs py-1 ${
-                    planAnalysis.needsReset 
-                      ? "bg-coral hover:bg-coral/90 text-white" 
-                      : "text-indigo/70 hover:text-indigo"
-                  }`}
-                >
-                  <Zap className="h-3 w-3" />
-                  <span>Recalculate</span>
-                </Button>
-              </div>
-            </div>
+            <h2 className="text-sm font-medium text-indigo mb-3">Schedule Calendar</h2>
             <div className="flex justify-center">
               <ScheduleCalendar wakeUpPlan={wakeUpPlan} />
             </div>

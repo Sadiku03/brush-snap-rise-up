@@ -5,6 +5,13 @@ import { Home, User, Award, BarChart, Moon, Menu, X, LogOut } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter
+} from "@/components/ui/drawer";
 import Dashboard from "./Dashboard";
 import Profile from "./Profile";
 import Quests from "./Quests";
@@ -49,18 +56,15 @@ const AppLayout = () => {
         </Button>
       </header>
       
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 bg-indigo/50 backdrop-blur-sm z-20" onClick={toggleMenu}>
-          <div className="bg-white w-64 h-full shadow-xl p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-indigo">Menu</h2>
-              <Button variant="ghost" size="icon" onClick={toggleMenu} className="text-indigo">
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            
-            <nav className="space-y-1">
+      {/* iOS-style Drawer Menu that stays within the iPhone frame */}
+      <Drawer open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+        <DrawerContent className="ios-menu h-[70%] rounded-t-2xl" onClick={(e) => e.stopPropagation()}>
+          <DrawerHeader className="text-center border-b border-lilac/10 pb-2">
+            <DrawerTitle className="text-lg font-semibold text-indigo">Menu</DrawerTitle>
+          </DrawerHeader>
+          
+          <nav className="p-2 overflow-auto">
+            <div className="space-y-0.5">
               <Link
                 to="/app"
                 className={`flex items-center gap-3 p-3 rounded-lg ${
@@ -68,7 +72,7 @@ const AppLayout = () => {
                     ? 'bg-coral text-white' 
                     : 'text-indigo hover:bg-lilac/10'
                 }`}
-                onClick={toggleMenu}
+                onClick={() => setIsMenuOpen(false)}
               >
                 <Home className="h-5 w-5" />
                 <span>Dashboard</span>
@@ -81,7 +85,7 @@ const AppLayout = () => {
                     ? 'bg-coral text-white' 
                     : 'text-indigo hover:bg-lilac/10'
                 }`}
-                onClick={toggleMenu}
+                onClick={() => setIsMenuOpen(false)}
               >
                 <User className="h-5 w-5" />
                 <span>Profile</span>
@@ -94,7 +98,7 @@ const AppLayout = () => {
                     ? 'bg-coral text-white' 
                     : 'text-indigo hover:bg-lilac/10'
                 }`}
-                onClick={toggleMenu}
+                onClick={() => setIsMenuOpen(false)}
               >
                 <Award className="h-5 w-5" />
                 <span>Quests</span>
@@ -107,7 +111,7 @@ const AppLayout = () => {
                     ? 'bg-coral text-white' 
                     : 'text-indigo hover:bg-lilac/10'
                 }`}
-                onClick={toggleMenu}
+                onClick={() => setIsMenuOpen(false)}
               >
                 <BarChart className="h-5 w-5" />
                 <span>Progress</span>
@@ -120,26 +124,26 @@ const AppLayout = () => {
                     ? 'bg-coral text-white' 
                     : 'text-indigo hover:bg-lilac/10'
                 }`}
-                onClick={toggleMenu}
+                onClick={() => setIsMenuOpen(false)}
               >
                 <Moon className="h-5 w-5" />
                 <span>Wind Down</span>
               </Link>
-            </nav>
-            
-            <div className="absolute bottom-8 left-0 right-0 px-5">
-              <Button 
-                variant="outline" 
-                className="w-full border-coral/30 text-coral flex items-center justify-center gap-2"
-                onClick={handleLogout}
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Log Out</span>
-              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </nav>
+          
+          <DrawerFooter className="pb-6 pt-2">
+            <Button 
+              variant="outline" 
+              className="w-full border-coral/30 text-coral flex items-center justify-center gap-2"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Log Out</span>
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
       
       {/* Main Content */}
       <main className="flex-1 p-4 pb-24">

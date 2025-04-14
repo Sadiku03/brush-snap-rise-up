@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
@@ -107,5 +108,15 @@
   
   .mobile-home-indicator {
     @apply absolute bottom-1 left-1/2 transform -translate-x-1/2 w-[30%] h-1 bg-black rounded-full opacity-20 z-40;
+  }
+  
+  /* iOS-style drawer menu */
+  .ios-menu {
+    @apply bg-white/90 backdrop-blur-md;
+  }
+  
+  /* Make sure the drawer overlay stays within the phone frame */
+  [data-overlay-wrapper] {
+    @apply !absolute;
   }
 }

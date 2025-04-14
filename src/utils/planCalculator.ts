@@ -1,3 +1,4 @@
+
 import { WakeUpPlan } from "../store/userStore";
 
 /**
@@ -31,7 +32,7 @@ export function calculateWakeUpPlan(
   let diffMinutes = targetWakeMinutes - currentWakeMinutes;
   
   // If the target wake time is earlier in the day (e.g., going from 8:00 to 6:00)
-  // We need to adjust by adding 24 hours (1440 minutes) to make the difference positive
+  // We need to adjust by adding 24 hours (1440 minutes) to make the difference negative
   if (diffMinutes > 0) {
     diffMinutes = diffMinutes - 1440;
   }
@@ -42,8 +43,8 @@ export function calculateWakeUpPlan(
   // Define block size (number of days to keep the same wake-up time)
   const blockDays = 3; // Keep the same wake-up time for 3 days
   
-  // Calculate daily decrement in minutes
-  const dailyDecrement = absDiffMinutes / daysUntilTarget;
+  // Calculate adjustment per block
+  const adjustmentPerBlock = absDiffMinutes / Math.ceil(daysUntilTarget / blockDays);
   
   // Generate the schedule
   const intervals = [];
@@ -54,7 +55,7 @@ export function calculateWakeUpPlan(
     const blockIndex = Math.floor(day / blockDays);
     
     // Calculate minutes to adjust based on the block
-    const minutesToAdjust = blockIndex * blockDays * dailyDecrement;
+    const minutesToAdjust = blockIndex * adjustmentPerBlock;
     
     let adjustedMinutes = currentWakeMinutes;
     
@@ -68,7 +69,7 @@ export function calculateWakeUpPlan(
     
     // Convert adjusted minutes back to hours:minutes format
     const adjustedHours = Math.floor(adjustedMinutes / 60);
-    const adjustedMins = adjustedMinutes % 60;
+    const adjustedMins = Math.floor(adjustedMinutes % 60);
     const formattedTime = `${adjustedHours.toString().padStart(2, '0')}:${adjustedMins.toString().padStart(2, '0')}`;
     
     // Add days to the current date for this interval

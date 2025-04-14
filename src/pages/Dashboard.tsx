@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useUserStore } from '@/store/userStore';
 import SmartWakeUpPlan from '@/components/SmartWakeUpPlan';
 import { getNextWakeUpTime } from '@/utils/planCalculator';
+import ScheduleCalendar from '@/components/ScheduleCalendar';
 
 const Dashboard = () => {
   const { name, wakeUpPlan, progress } = useUserStore();
@@ -12,13 +13,17 @@ const Dashboard = () => {
   
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-indigo mb-1">
-          Good {getTimeOfDay()}, {name || 'Quester'}!
-        </h1>
-        <p className="text-indigo/70">
-          {getWelcomeMessage(progress.streak, nextWakeUp)}
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-indigo mb-1">
+            Good {getTimeOfDay()}, {name || 'Quester'}!
+          </h1>
+          <p className="text-indigo/70">
+            {getWelcomeMessage(progress.streak, nextWakeUp)}
+          </p>
+        </div>
+        
+        {wakeUpPlan && <ScheduleCalendar wakeUpPlan={wakeUpPlan} />}
       </div>
       
       <div className="grid grid-cols-1 gap-6">

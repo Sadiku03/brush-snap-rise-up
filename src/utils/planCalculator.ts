@@ -186,3 +186,111 @@ export function isValidWakeUpTime(
   // Check if verification time is within the allowed window
   return verificationDate >= wakeUpDate && verificationDate <= latestAllowed;
 }
+
+/**
+ * Recalculate the wake-up plan from a new starting point while keeping the same target
+ */
+export function recalculateWakePlan({
+  currentDate,
+  latestWakeTime,
+  targetWakeTime,
+  targetDate,
+  originalPlan
+}: {
+  currentDate: string;
+  latestWakeTime: string;
+  targetWakeTime: string;
+  targetDate: string;
+  originalPlan: WakeUpPlan;
+}): WakeUpPlan {
+  // Create a new plan starting from the current date and latest wake time
+  const newPlan = calculateWakeUpPlan(
+    latestWakeTime,
+    targetWakeTime,
+    targetDate
+  );
+  
+  // Preserve history by keeping past intervals from the original plan
+  const pastIntervals = originalPlan.intervals.filter(interval => 
+    interval.date < currentDate
+  );
+  
+  // Get future intervals from the new plan
+  const futureIntervals = newPlan.intervals.filter(interval => 
+    interval.date >= currentDate
+  );
+  
+  // Combine past and future intervals, respecting any today's completion
+  const todayInterval = originalPlan.intervals.find(interval => 
+    interval.date === currentDate
+  );
+  
+  const combinedIntervals = [
+    ...pastIntervals,
+    // If there's a today's interval, use its completion status
+    ...(todayInterval ? [todayInterval] : []),
+    // For future dates, use the recalculated times
+    ...futureIntervals.filter(interval => interval.date !== currentDate)
+  ];
+  
+  // Sort intervals by date
+  const sortedIntervals = combinedIntervals.sort((a, b) => 
+    a.date.localeCompare(b.date)
+  );
+  
+  return {
+    currentWakeTime: latestWakeTime, // Update the current wake time
+    targetWakeTime,
+    targetDate,
+    intervals: sortedIntervals
+  };
+}
+
+/**
+ * Analyzes a wake up plan to determine if it needs adjustment
+ * @returns Object with needsReset and reason if adjustment is recommended
+ */
+export function analyzeWakeUpPlan(plan: WakeUpPlan): { 
+  needsReset: boolean; 
+  reason: string | null;
+  latestWakeTime: string | null;
+} {
+  if (!plan || !plan.intervals.length) {
+    return { needsReset: false, reason: null, latestWakeTime: null };
+  }
+  
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Get recent intervals up to today (last 5 days or less)
+  const recentIntervals = plan.intervals
+    .filter(interval => interval.date <= today)
+    .sort((a, b) => b.date.localeCompare(a.date)) // Sort descending by date
+    .slice(0, 5);
+  
+  if (recentIntervals.length < 2) {
+    return { needsReset: false, reason: null, latestWakeTime: null };
+  }
+  
+  // Check for missed check-ins (2+ days)
+  const missedCheckIns = recentIntervals.filter(interval => 
+    !interval.completed && interval.date !== today
+  ).length;
+  
+  if (missedCheckIns >= 2) {
+    // Use the most recent wake time or the current wake time as fallback
+    const latestCompletedInterval = recentIntervals.find(interval => interval.completed);
+    const latestWakeTime = latestCompletedInterval?.wakeTime || plan.currentWakeTime;
+    
+    return { 
+      needsReset: true, 
+      reason: "You've missed 2 or more check-ins recently.", 
+      latestWakeTime 
+    };
+  }
+  
+  // Get the latest actual wake times from brush snaps
+  // For a real implementation, we would need to store the actual wake times
+  // For now, we'll consider this as a future enhancement
+  
+  return { needsReset: false, reason: null, latestWakeTime: null };
+}

@@ -2,14 +2,15 @@
 import { useEffect } from 'react';
 import { useUserStore } from '@/store/userStore';
 import SmartWakeUpPlan from '@/components/SmartWakeUpPlan';
-import { getNextWakeUpTime, calculateWakeUpPlan } from '@/utils/planCalculator';
+import { getNextWakeUpTime, calculateWakeUpPlan, analyzeWakeUpPlan } from '@/utils/planCalculator';
 import ScheduleCalendar from '@/components/ScheduleCalendar';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { RefreshCw, Zap } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import RecalculatePlanModal from '@/components/RecalculatePlanModal';
 
 const Dashboard = () => {
-  const { name, wakeUpPlan, progress, setWakeUpPlan } = useUserStore();
+  const { name, wakeUpPlan, progress, setWakeUpPlan, setShowRecalculationModal } = useUserStore();
   const { toast } = useToast();
   
   // Get the next wake-up time from the plan
@@ -37,7 +38,9 @@ const Dashboard = () => {
           ...newInterval,
           completed: originalInterval ? originalInterval.completed : false
         };
-      })
+      }),
+      // Preserve adjustment history if any
+      adjustmentHistory: wakeUpPlan.adjustmentHistory || []
     };
 
     // Update the plan in the store
@@ -49,6 +52,14 @@ const Dashboard = () => {
       duration: 3000,
     });
   };
+  
+  // Function to manually open recalculation modal
+  const handleOpenRecalculationModal = () => {
+    setShowRecalculationModal(true);
+  };
+  
+  // Analyze plan to see if it needs adjustment
+  const planAnalysis = wakeUpPlan ? analyzeWakeUpPlan(wakeUpPlan) : { needsReset: false };
   
   return (
     <div className="space-y-6">
@@ -68,15 +79,31 @@ const Dashboard = () => {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-medium text-indigo">Schedule Calendar</h2>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleRefreshPlan}
-                className="text-indigo/70 hover:text-indigo flex items-center gap-1 text-xs py-1"
-              >
-                <RefreshCw className="h-3 w-3" />
-                <span>Refresh Plan</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefreshPlan}
+                  className="text-indigo/70 hover:text-indigo flex items-center gap-1 text-xs py-1"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  <span>Refresh Plan</span>
+                </Button>
+                
+                <Button
+                  variant={planAnalysis.needsReset ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleOpenRecalculationModal}
+                  className={`flex items-center gap-1 text-xs py-1 ${
+                    planAnalysis.needsReset 
+                      ? "bg-coral hover:bg-coral/90 text-white" 
+                      : "text-indigo/70 hover:text-indigo"
+                  }`}
+                >
+                  <Zap className="h-3 w-3" />
+                  <span>Recalculate</span>
+                </Button>
+              </div>
             </div>
             <div className="flex justify-center">
               <ScheduleCalendar wakeUpPlan={wakeUpPlan} />
@@ -84,6 +111,9 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+      
+      {/* Add the recalculation modal */}
+      <RecalculatePlanModal />
     </div>
   );
 };

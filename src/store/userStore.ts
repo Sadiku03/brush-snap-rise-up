@@ -19,6 +19,12 @@ export interface WakeUpPlan {
     wakeTime: string;
     completed: boolean;
   }[];
+  adjustmentHistory?: {
+    date: string;
+    reason: string;
+    previousWakeTime: string;
+    newWakeTime: string;
+  }[];
 }
 
 export interface BrushSnap {
@@ -26,6 +32,7 @@ export interface BrushSnap {
   date: string;
   imageUrl: string;
   prompt: string;
+  actualWakeTime?: string;
 }
 
 export interface UserProgress {
@@ -50,6 +57,8 @@ interface UserStore {
   progress: UserProgress;
   brushSnaps: BrushSnap[];
   
+  showRecalculationModal: boolean;
+  
   setUser: (name: string, email: string) => void;
   completeOnboarding: () => void;
   setWakeUpPlan: (plan: WakeUpPlan) => void;
@@ -57,10 +66,12 @@ interface UserStore {
   addBrushSnap: (brushSnap: BrushSnap) => void;
   recordWakeUp: (date: string) => void;
   resetProgress: () => void;
+  setShowRecalculationModal: (show: boolean) => void;
+  recalculateWakeUpPlan: (latestWakeTime: string) => void;
 }
 
 const calculateXpWithStreak = (baseXp: number, streak: number): number => {
-  const bonusPercentage = 0.1; // 10% bonus per day in streak
+  const bonusPercentage = 0.1;
   const multiplier = 1 + (streak * bonusPercentage);
   return Math.round(baseXp * multiplier);
 };
@@ -112,12 +123,52 @@ export const useUserStore = create<UserStore>()(
       completedQuests: [],
       progress: initialProgress,
       brushSnaps: [],
+      showRecalculationModal: false,
       
       setUser: (name, email) => set({ name, email }),
       
       completeOnboarding: () => set({ isOnboarded: true }),
       
       setWakeUpPlan: (plan) => set({ wakeUpPlan: plan }),
+      
+      setShowRecalculationModal: (show) => set({ showRecalculationModal: show }),
+      
+      recalculateWakeUpPlan: (latestWakeTime) => {
+        const { wakeUpPlan } = get();
+        if (!wakeUpPlan) return;
+        
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { recalculateWakePlan } = require('../utils/planCalculator');
+        
+        const recalculatedPlan = recalculateWakePlan({
+          currentDate: today,
+          latestWakeTime,
+          targetWakeTime: wakeUpPlan.targetWakeTime,
+          targetDate: wakeUpPlan.targetDate,
+          originalPlan: wakeUpPlan
+        });
+        
+        const adjustmentHistory = wakeUpPlan.adjustmentHistory || [];
+        
+        const updatedPlan = {
+          ...recalculatedPlan,
+          adjustmentHistory: [
+            ...adjustmentHistory,
+            {
+              date: today,
+              reason: "Plan recalculated after disruption",
+              previousWakeTime: wakeUpPlan.currentWakeTime,
+              newWakeTime: latestWakeTime
+            }
+          ]
+        };
+        
+        set({
+          wakeUpPlan: updatedPlan,
+          showRecalculationModal: false
+        });
+      },
       
       completeQuest: (questId) => {
         const { availableQuests, completedQuests, progress } = get();
@@ -154,7 +205,7 @@ export const useUserStore = create<UserStore>()(
       },
       
       addBrushSnap: (brushSnap) => {
-        const { brushSnaps, progress } = get();
+        const { brushSnaps, progress, wakeUpPlan } = get();
         const today = new Date().toISOString().split('T')[0];
         
         const isNewDay = progress.lastCheckIn !== today;
@@ -187,6 +238,11 @@ export const useUserStore = create<UserStore>()(
             : progress.level;
           const finalXp = newXp >= xpToNextLevel ? newXp - xpToNextLevel : newXp;
           
+          const { analyzeWakeUpPlan } = require('../utils/planCalculator');
+          
+          const shouldShowModal = wakeUpPlan ? 
+            analyzeWakeUpPlan(wakeUpPlan).needsReset : false;
+          
           set({
             brushSnaps: [...brushSnaps, brushSnap],
             progress: {
@@ -197,7 +253,8 @@ export const useUserStore = create<UserStore>()(
               xp: finalXp,
               totalXp: newTotalXp,
               level: newLevel,
-            }
+            },
+            showRecalculationModal: shouldShowModal
           });
         } else {
           set({
@@ -231,6 +288,7 @@ export const useUserStore = create<UserStore>()(
         completedQuests: [],
         progress: initialProgress,
         brushSnaps: [],
+        showRecalculationModal: false,
       }),
     }),
     {

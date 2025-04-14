@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Award, Star, RefreshCw, Info, ChevronDown, ChevronRight, Calendar } from "lucide-react";
@@ -17,6 +18,7 @@ import {
   CollapsibleTrigger
 } from "@/components/ui/collapsible";
 import { allHabitQuests } from '@/data/questsByLevel';
+import UpcomingHabits from './UpcomingHabits';
 
 const calculateXpWithStreak = (baseXp: number, streak: number): number => {
   const bonusPercentage = 0.1; // 10% bonus per day in streak
@@ -249,6 +251,9 @@ const QuestSystem = () => {
               </div>
             </CollapsibleContent>
           </Collapsible>
+          
+          {/* Place UpcomingHabits here in the habit process section */}
+          <UpcomingHabits />
           
           <QuestCalendarView 
             completedQuests={completedQuests}

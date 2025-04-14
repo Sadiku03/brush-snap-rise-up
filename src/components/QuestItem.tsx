@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { 
   CheckCircle, 
   Star,
-  RefreshCw,
   ChevronDown,
   ChevronUp,
   CheckSquare,
@@ -52,15 +51,15 @@ const QuestItem = ({
   const categoryIcon = categoryIcons[quest.category] || 
     categoryIcons[QuestCategory.GENERAL];
   
-  // Get styles based on category
-  const categoryClass = isCompleted 
-    ? "bg-emerald-50 border-emerald-200" 
-    : categoryClasses[quest.category] || categoryClasses[QuestCategory.GENERAL];
+  // Use a completed style for completed quests, and category style for available quests
+  const itemClass = isCompleted 
+    ? "bg-emerald-50 border-emerald-200 text-emerald-700" 
+    : `bg-amber-50 border-amber-200 text-amber-700`;
   
   return (
     <div className={cn(
       "quest-item border rounded-xl p-4 mb-4 transition-all",
-      categoryClass,
+      itemClass,
       detailsOpen && "shadow-md"
     )}>
       <div className="flex justify-between items-start">
@@ -69,17 +68,17 @@ const QuestItem = ({
             {isCompleted ? (
               <CheckCircle className="h-5 w-5 text-emerald-500" />
             ) : categoryIcon}
-            <span className="font-semibold text-base text-indigo">
+            <span className="font-semibold text-base">
               {quest.title}
             </span>
           </div>
           
-          <p className="text-indigo/70 text-sm mb-2">{quest.description}</p>
+          <p className="text-opacity-70 text-sm mb-2">{quest.description}</p>
           
           {/* Expandable details */}
           {quest.detailedDescription && (
             <button 
-              className="flex items-center text-xs text-indigo/60 hover:text-indigo/80 mb-2"
+              className="flex items-center text-xs opacity-60 hover:opacity-80 mb-2"
               onClick={() => setDetailsOpen(!detailsOpen)}
             >
               {detailsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -88,7 +87,7 @@ const QuestItem = ({
           )}
           
           {detailsOpen && quest.detailedDescription && (
-            <div className="text-sm text-indigo/70 bg-white/50 rounded-lg p-3 mb-3 border border-current/10">
+            <div className="text-sm opacity-70 bg-white/50 rounded-lg p-3 mb-3 border border-current/10">
               {quest.detailedDescription}
             </div>
           )}

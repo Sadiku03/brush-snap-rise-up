@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Clock, Calendar, ArrowRight, Edit2, Check, Camera, Bell } from "lucide-react";
-import { calculateWakeUpPlan, getNextWakeUpTime, isValidWakeUpTime } from '@/utils/planCalculator';
+import { calculateWakeUpPlan, getNextWakeUpTime, isValidWakeUpTime, timeToMinutes } from '@/utils/planCalculator';
 import { useUserStore } from '@/store/userStore';
 import { useToast } from '@/components/ui/use-toast';
 import { NativeBridge } from '@/services/NativeBridge';
@@ -27,6 +26,7 @@ const SmartWakeUpPlan = () => {
   );
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [actualWakeTime, setActualWakeTime] = useState('');
   
   const { toast } = useToast();
   
@@ -149,6 +149,13 @@ const SmartWakeUpPlan = () => {
       
       setShowCheckIn(forceShowCheckIn || timeDiff <= fiveMinutes);
       
+      // Set actual wake time to current time
+      if (!actualWakeTime && (forceShowCheckIn || timeDiff <= fiveMinutes)) {
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        setActualWakeTime(`${hours}:${minutes}`);
+      }
+      
       console.log("Current time:", now.toTimeString());
       console.log("Wake up time:", wakeUpDate.toTimeString());
       console.log("Time difference (ms):", timeDiff);
@@ -161,7 +168,7 @@ const SmartWakeUpPlan = () => {
     const interval = setInterval(checkWindow, 60 * 1000);
     
     return () => clearInterval(interval);
-  }, [wakeUpPlan, nextWakeUp, forceShowCheckIn]);
+  }, [wakeUpPlan, nextWakeUp, forceShowCheckIn, actualWakeTime]);
   
   const handleCreatePlan = () => {
     const plan = calculateWakeUpPlan(currentWakeTime, targetWakeTime, targetDate);
@@ -191,6 +198,31 @@ const SmartWakeUpPlan = () => {
   
   const today = new Date().toISOString().split('T')[0];
   const alreadyVerifiedToday = brushSnaps.some(snap => snap.date === today);
+  
+  // Handle check-in with actual wake time
+  const handleCheckIn = () => {
+    // Record the wake-up with the actual wake time
+    recordWakeUp(today, actualWakeTime);
+    
+    document.getElementById('brush-snap-component')?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'center'
+    });
+    
+    const brushSnapElement = document.getElementById('brush-snap-component');
+    if (brushSnapElement) {
+      brushSnapElement.classList.add('ring-4', 'ring-coral', 'ring-opacity-70');
+      setTimeout(() => {
+        brushSnapElement.classList.remove('ring-4', 'ring-coral', 'ring-opacity-70');
+      }, 2000);
+    }
+    
+    toast({
+      title: "Time to check in!",
+      description: "Take a photo with your toothbrush to verify your wake-up.",
+      duration: 5000,
+    });
+  };
   
   // Function to request to set a native alarm
   const requestSetNativeAlarm = async (time: string) => {
@@ -349,28 +381,18 @@ const SmartWakeUpPlan = () => {
                 </Button>
                 
                 {showCheckIn && !alreadyVerifiedToday && (
-                  <CheckInButton 
-                    onCheckIn={() => {
-                      document.getElementById('brush-snap-component')?.scrollIntoView({ 
-                        behavior: 'smooth',
-                        block: 'center'
-                      });
-                      
-                      const brushSnapElement = document.getElementById('brush-snap-component');
-                      if (brushSnapElement) {
-                        brushSnapElement.classList.add('ring-4', 'ring-coral', 'ring-opacity-70');
-                        setTimeout(() => {
-                          brushSnapElement.classList.remove('ring-4', 'ring-coral', 'ring-opacity-70');
-                        }, 2000);
-                      }
-                      
-                      toast({
-                        title: "Time to check in!",
-                        description: "Take a photo with your toothbrush to verify your wake-up.",
-                        duration: 5000,
-                      });
-                    }}
-                  />
+                  <div className="mt-3">
+                    <div className="flex gap-2 mb-2">
+                      <Input
+                        type="time"
+                        value={actualWakeTime}
+                        onChange={(e) => setActualWakeTime(e.target.value)}
+                        className="flex-1"
+                        placeholder="Actual wake-up time"
+                      />
+                    </div>
+                    <CheckInButton onCheckIn={handleCheckIn} />
+                  </div>
                 )}
                 
                 {alreadyVerifiedToday && (
@@ -390,7 +412,8 @@ const SmartWakeUpPlan = () => {
                     className={`p-3 rounded-lg border flex justify-between items-center
                       ${interval.completed 
                         ? 'bg-emerald-50 border-emerald-200' 
-                        : 'bg-white border-lilac/20'}`}
+                        : 'bg-white border-lilac/20'}
+                      ${interval.isAdjusted ? 'border-l-2 border-l-coral' : ''}`}
                   >
                     <div className="flex items-center gap-2">
                       <div 
@@ -398,6 +421,9 @@ const SmartWakeUpPlan = () => {
                           ${interval.completed ? 'bg-emerald-400' : 'bg-indigo/20'}`}
                       />
                       <span className="font-medium">{interval.wakeTime}</span>
+                      {interval.isAdjusted && (
+                        <span className="text-[10px] text-coral ml-1">(adjusted)</span>
+                      )}
                     </div>
                     <span className="text-sm text-indigo/70">
                       {new Date(interval.date).toLocaleDateString(undefined, {

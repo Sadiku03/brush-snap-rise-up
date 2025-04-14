@@ -1,4 +1,3 @@
-
 import { WakeUpPlan } from "../store/userStore";
 
 /**
@@ -8,11 +7,12 @@ import { WakeUpPlan } from "../store/userStore";
 export function calculateWakeUpPlan(
   currentWakeTime: string,
   targetWakeTime: string,
-  targetDate: string
+  targetDate: string,
+  startDate?: string // Optional parameter to start from a specific date
 ): WakeUpPlan {
   // Parse input dates and times
   const targetDateObj = new Date(targetDate);
-  const currentDate = new Date();
+  const currentDate = startDate ? new Date(startDate) : new Date();
   
   // Parse times (format: "HH:MM")
   const [currentHours, currentMinutes] = currentWakeTime.split(':').map(Number);
@@ -87,7 +87,8 @@ export function calculateWakeUpPlan(
       intervals.push({
         date: dateString,
         wakeTime: formattedTime,
-        completed: false
+        completed: false,
+        isAdjusted: startDate !== undefined // Mark as adjusted if this is a recalculated plan
       });
     }
     
@@ -101,7 +102,8 @@ export function calculateWakeUpPlan(
   intervals.push({
     date: targetDateObj.toISOString().split('T')[0],
     wakeTime: targetWakeTime,
-    completed: false
+    completed: false,
+    isAdjusted: startDate !== undefined // Mark as adjusted if this is a recalculated plan
   });
   
   // Remove duplicates and sort by date
@@ -118,7 +120,7 @@ export function calculateWakeUpPlan(
 /**
  * Helper function to remove duplicate intervals with the same date and wake time
  */
-function removeDuplicateIntervals(intervals: Array<{date: string, wakeTime: string, completed: boolean}>) {
+function removeDuplicateIntervals(intervals: Array<{date: string, wakeTime: string, completed: boolean, isAdjusted: boolean}>) {
   const uniqueMap = new Map();
   
   intervals.forEach(interval => {
@@ -208,7 +210,8 @@ export function recalculateWakePlan({
   const newPlan = calculateWakeUpPlan(
     latestWakeTime,
     targetWakeTime,
-    targetDate
+    targetDate,
+    currentDate // Pass the current date as the start date
   );
   
   // Preserve history by keeping past intervals from the original plan
@@ -246,9 +249,36 @@ export function recalculateWakePlan({
     intervals: sortedIntervals.map(interval => ({
       ...interval,
       // Mark future intervals as adjusted if they're from today onwards
-      isAdjusted: interval.date >= currentDate
-    }))
+      isAdjusted: interval.date >= currentDate || interval.isAdjusted
+    })),
+    // Add to adjustment history
+    adjustmentHistory: [
+      ...(originalPlan.adjustmentHistory || []),
+      {
+        date: currentDate,
+        reason: "Automatic adjustment after missed check-ins",
+        previousWakeTime: originalPlan.currentWakeTime,
+        newWakeTime: latestWakeTime
+      }
+    ]
   };
+}
+
+/**
+ * Converts minutes since midnight to HH:MM time format
+ */
+export function minutesToTime(mins: number): string {
+  const hours = Math.floor(mins / 60);
+  const minutes = mins % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Converts HH:MM time format to minutes since midnight
+ */
+export function timeToMinutes(timeStr: string): number {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
 }
 
 /**

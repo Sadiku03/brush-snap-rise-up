@@ -1,5 +1,7 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { DailyCheckIn, logCheckIn, timeToMinutes } from '../utils/checkInTracker';
 
 export interface Quest {
   id: string;
@@ -57,6 +59,7 @@ interface UserStore {
   
   progress: UserProgress;
   brushSnaps: BrushSnap[];
+  checkInHistory: DailyCheckIn[];
   
   showRecalculationModal: boolean;
   
@@ -65,7 +68,7 @@ interface UserStore {
   setWakeUpPlan: (plan: WakeUpPlan) => void;
   completeQuest: (questId: string) => void;
   addBrushSnap: (brushSnap: BrushSnap) => void;
-  recordWakeUp: (date: string) => void;
+  recordWakeUp: (date: string, actualWakeTime?: string) => void;
   resetProgress: () => void;
   setShowRecalculationModal: (show: boolean) => void;
   recalculateWakeUpPlan: (latestWakeTime: string) => void;
@@ -124,6 +127,7 @@ export const useUserStore = create<UserStore>()(
       completedQuests: [],
       progress: initialProgress,
       brushSnaps: [],
+      checkInHistory: [],
       showRecalculationModal: false,
       
       setUser: (name, email) => set({ name, email }),
@@ -206,7 +210,7 @@ export const useUserStore = create<UserStore>()(
       },
       
       addBrushSnap: (brushSnap) => {
-        const { brushSnaps, progress, wakeUpPlan } = get();
+        const { brushSnaps, progress, wakeUpPlan, checkInHistory } = get();
         const today = new Date().toISOString().split('T')[0];
         
         const isNewDay = progress.lastCheckIn !== today;
@@ -239,10 +243,31 @@ export const useUserStore = create<UserStore>()(
             : progress.level;
           const finalXp = newXp >= xpToNextLevel ? newXp - xpToNextLevel : newXp;
           
+          const { autoReplanWakeUpSchedule } = require('../utils/replanner');
           const { analyzeWakeUpPlan } = require('../utils/planCalculator');
           
           const shouldShowModal = wakeUpPlan ? 
             analyzeWakeUpPlan(wakeUpPlan).needsReset : false;
+          
+          // Update checkInHistory with the new check-in
+          let updatedCheckInHistory = [...checkInHistory];
+          
+          if (wakeUpPlan) {
+            const todayInterval = wakeUpPlan.intervals.find(interval => interval.date === today);
+            
+            if (todayInterval) {
+              const scheduledWakeMinutes = timeToMinutes(todayInterval.wakeTime);
+              const actualWakeMinutes = brushSnap.actualWakeTime 
+                ? timeToMinutes(brushSnap.actualWakeTime)
+                : scheduledWakeMinutes;
+              
+              updatedCheckInHistory = logCheckIn(checkInHistory, {
+                date: today,
+                scheduledWakeMinutes,
+                actualWakeMinutes
+              });
+            }
+          }
           
           set({
             brushSnaps: [...brushSnaps, brushSnap],
@@ -255,7 +280,8 @@ export const useUserStore = create<UserStore>()(
               totalXp: newTotalXp,
               level: newLevel,
             },
-            showRecalculationModal: shouldShowModal
+            showRecalculationModal: shouldShowModal,
+            checkInHistory: updatedCheckInHistory
           });
         } else {
           set({
@@ -264,10 +290,11 @@ export const useUserStore = create<UserStore>()(
         }
       },
       
-      recordWakeUp: (date) => {
-        const { wakeUpPlan } = get();
+      recordWakeUp: (date, actualWakeTime) => {
+        const { wakeUpPlan, checkInHistory } = get();
         if (!wakeUpPlan) return;
         
+        // Mark the wake-up as completed in the intervals
         const newIntervals = wakeUpPlan.intervals.map(interval => {
           if (interval.date === date) {
             return { ...interval, completed: true };
@@ -275,18 +302,35 @@ export const useUserStore = create<UserStore>()(
           return interval;
         });
         
+        const updatedPlan = {
+          ...wakeUpPlan,
+          intervals: newIntervals
+        };
+        
+        // Log the check-in to the history
+        const todayInterval = wakeUpPlan.intervals.find(interval => interval.date === date);
+        let updatedCheckInHistory = [...checkInHistory];
+        
+        if (todayInterval) {
+          const scheduledWakeMinutes = timeToMinutes(todayInterval.wakeTime);
+          const actualWakeMinutes = actualWakeTime 
+            ? timeToMinutes(actualWakeTime)
+            : scheduledWakeMinutes; // If no actual time provided, assume on-time
+          
+          updatedCheckInHistory = logCheckIn(checkInHistory, {
+            date,
+            scheduledWakeMinutes,
+            actualWakeMinutes
+          });
+        }
+        
         set({
-          wakeUpPlan: {
-            ...wakeUpPlan,
-            intervals: newIntervals
-          }
+          wakeUpPlan: updatedPlan,
+          checkInHistory: updatedCheckInHistory
         });
         
         const { analyzeWakeUpPlan } = require('../utils/planCalculator');
-        const shouldShowModal = analyzeWakeUpPlan({
-          ...wakeUpPlan,
-          intervals: newIntervals
-        }).needsReset;
+        const shouldShowModal = analyzeWakeUpPlan(updatedPlan).needsReset;
         
         if (shouldShowModal && !get().showRecalculationModal) {
           setTimeout(() => {
@@ -301,6 +345,7 @@ export const useUserStore = create<UserStore>()(
         completedQuests: [],
         progress: initialProgress,
         brushSnaps: [],
+        checkInHistory: [],
         showRecalculationModal: false,
       }),
     }),

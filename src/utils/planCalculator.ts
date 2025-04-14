@@ -148,9 +148,9 @@ export function isValidWakeUpTime(
   const wakeUpDate = new Date();
   wakeUpDate.setHours(hours, minutes, 0, 0);
   
-  // Allow verification up to 30 minutes after the scheduled time
+  // Allow verification up to 5 minutes after the scheduled time (changed from 30 minutes)
   const latestAllowed = new Date(wakeUpDate);
-  latestAllowed.setMinutes(latestAllowed.getMinutes() + 30);
+  latestAllowed.setMinutes(latestAllowed.getMinutes() + 5);
   
   // Create a Date from the verification timestamp
   const verificationDate = new Date(timestamp);

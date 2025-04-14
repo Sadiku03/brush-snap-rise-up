@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +29,8 @@ const SmartWakeUpPlan = () => {
   
   const nextWakeUp = wakeUpPlan ? getNextWakeUpTime(wakeUpPlan) : null;
   
-  // Check if it's within the check-in window
+  const forceShowCheckIn = false; // Change to true for testing
+  
   useEffect(() => {
     if (!wakeUpPlan || !nextWakeUp) return;
     
@@ -38,35 +38,36 @@ const SmartWakeUpPlan = () => {
       const now = new Date();
       const today = now.toISOString().split('T')[0];
       
-      // Only show the check-in button if today is the next wake up date
       if (nextWakeUp.date !== today) {
-        setShowCheckIn(false);
+        setShowCheckIn(forceShowCheckIn);
         return;
       }
       
-      // Check if the current time is within 15 minutes before or after the wake-up time
       const wakeUpHours = parseInt(nextWakeUp.time.split(':')[0]);
       const wakeUpMinutes = parseInt(nextWakeUp.time.split(':')[1]);
       
       const wakeUpDate = new Date();
       wakeUpDate.setHours(wakeUpHours, wakeUpMinutes, 0, 0);
       
-      // 15 minutes in milliseconds
-      const fifteenMinutes = 15 * 60 * 1000;
+      const fiveMinutes = 5 * 60 * 1000;
       
       const timeDiff = Math.abs(now.getTime() - wakeUpDate.getTime());
       
-      setShowCheckIn(timeDiff <= fifteenMinutes);
+      setShowCheckIn(forceShowCheckIn || timeDiff <= fiveMinutes);
+      
+      console.log("Current time:", now.toTimeString());
+      console.log("Wake up time:", wakeUpDate.toTimeString());
+      console.log("Time difference (ms):", timeDiff);
+      console.log("Check-in window (ms):", fiveMinutes);
+      console.log("Should show check-in:", forceShowCheckIn || timeDiff <= fiveMinutes);
     };
     
-    // Check initially
     checkWindow();
     
-    // Then check every minute
     const interval = setInterval(checkWindow, 60 * 1000);
     
     return () => clearInterval(interval);
-  }, [wakeUpPlan, nextWakeUp]);
+  }, [wakeUpPlan, nextWakeUp, forceShowCheckIn]);
   
   const handleCreatePlan = () => {
     const plan = calculateWakeUpPlan(currentWakeTime, targetWakeTime, targetDate);
@@ -81,7 +82,6 @@ const SmartWakeUpPlan = () => {
     return (completedIntervals / wakeUpPlan.intervals.length) * 100;
   };
   
-  // Check if user already has a verification for today
   const today = new Date().toISOString().split('T')[0];
   const alreadyVerifiedToday = brushSnaps.some(snap => snap.date === today);
   
@@ -201,18 +201,14 @@ const SmartWakeUpPlan = () => {
                   </p>
                 </div>
                 
-                {/* Check-in button - only shown during the check-in window */}
                 {showCheckIn && !alreadyVerifiedToday && (
                   <CheckInButton 
                     onCheckIn={() => {
-                      // Simulate opening a camera modal by redirecting to the BrushSnap component
-                      // In a real app, this would open a camera modal
                       document.getElementById('brush-snap-component')?.scrollIntoView({ 
                         behavior: 'smooth',
                         block: 'center'
                       });
                       
-                      // Flash the brush snap component to draw attention
                       const brushSnapElement = document.getElementById('brush-snap-component');
                       if (brushSnapElement) {
                         brushSnapElement.classList.add('ring-4', 'ring-coral', 'ring-opacity-70');
@@ -230,7 +226,6 @@ const SmartWakeUpPlan = () => {
                   />
                 )}
                 
-                {/* Already verified today indicator */}
                 {alreadyVerifiedToday && (
                   <div className="absolute top-2 right-2 bg-emerald-500 text-white p-1 rounded-full">
                     <Check className="h-4 w-4" />
@@ -284,11 +279,9 @@ const SmartWakeUpPlan = () => {
   );
 };
 
-// Check-in button component with pulsing animation
 const CheckInButton = ({ onCheckIn }: { onCheckIn: () => void }) => {
   const [isPulsing, setIsPulsing] = useState(true);
   
-  // Start pulsing animation
   useEffect(() => {
     const interval = setInterval(() => {
       setIsPulsing(prev => !prev);

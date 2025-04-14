@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Award, Star, RefreshCw, Info, ChevronDown, ChevronRight, Calendar, List } from "lucide-react";
@@ -57,7 +56,6 @@ const QuestSystem = () => {
   
   const weeklyStreakProgress = Math.min(progress.streak / 7, 1) * 100;
 
-  // Filter completed quests for today only
   const todayStr = new Date().toISOString().split('T')[0];
   const todayCompletedQuests = completedQuests.filter(quest => {
     const questCompletedDate = quest.dateCompleted ? new Date(quest.dateCompleted).toISOString().split('T')[0] : null;
@@ -195,37 +193,35 @@ const QuestSystem = () => {
                   </CollapsibleContent>
                 </Collapsible>
                 
-                {todayCompletedQuests.length > 0 && (
-                  <Collapsible
-                    open={completedExpanded}
-                    onOpenChange={setCompletedExpanded}
-                    className="border border-emerald-100 rounded-lg overflow-hidden"
-                  >
-                    <div className="bg-emerald-50 p-3">
-                      <CollapsibleTrigger className="flex items-center justify-between w-full">
-                        <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wider">
-                          Completed Quests Today
-                        </h3>
-                        {completedExpanded ? (
-                          <ChevronDown className="h-5 w-5 text-emerald-500" />
-                        ) : (
-                          <ChevronRight className="h-5 w-5 text-emerald-500" />
-                        )}
-                      </CollapsibleTrigger>
-                    </div>
-                    
-                    <CollapsibleContent className="p-3 bg-white">
-                      <QuestList
-                        quests={todayCompletedQuests}
-                        isCompleted={true}
-                        streakMultiplier={streakMultiplier}
-                        calculateAdjustedXp={calculateAdjustedXp}
-                        emptyMessage="No completed quests yet today. Complete some quests to see them here!"
-                        showDetails={true}
-                      />
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
+                <Collapsible
+                  open={completedExpanded}
+                  onOpenChange={setCompletedExpanded}
+                  className="border border-emerald-100 rounded-lg overflow-hidden"
+                >
+                  <div className="bg-emerald-50 p-3">
+                    <CollapsibleTrigger className="flex items-center justify-between w-full">
+                      <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wider">
+                        Completed Quests Today
+                      </h3>
+                      {completedExpanded ? (
+                        <ChevronDown className="h-5 w-5 text-emerald-500" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5 text-emerald-500" />
+                      )}
+                    </CollapsibleTrigger>
+                  </div>
+                  
+                  <CollapsibleContent className="p-3 bg-white">
+                    <QuestList
+                      quests={todayCompletedQuests}
+                      isCompleted={true}
+                      streakMultiplier={streakMultiplier}
+                      calculateAdjustedXp={calculateAdjustedXp}
+                      emptyMessage="No completed quests yet today. Complete some quests to see them here!"
+                      showDetails={true}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             </CollapsibleContent>
           </Collapsible>

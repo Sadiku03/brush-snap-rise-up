@@ -2,14 +2,12 @@
 import { useEffect, useState } from 'react';
 import ProgressMap from '@/components/ProgressMap';
 import { useUserStore } from '@/store/userStore';
-import { calculateWakeUpPlan, analyzeWakeUpPlan, recalculateWakePlan } from '@/utils/planCalculator';
-import { Button } from '@/components/ui/button';
+import { calculateWakeUpPlan, analyzeWakeUpPlan } from '@/utils/planCalculator';
 import { useToast } from '@/hooks/use-toast';
-import { RefreshCw, Zap, AlertTriangle, Clock } from 'lucide-react';
+import { RefreshCw, AlertTriangle, Clock } from 'lucide-react';
 import RecalculatePlanModal from '@/components/RecalculatePlanModal';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { shouldAutoReplan, autoReplanWakeUpSchedule } from '@/utils/replanner';
-import { timeToMinutes } from '@/utils/checkInTracker';
 
 const Progress = () => {
   const { 
@@ -27,14 +25,12 @@ const Progress = () => {
   const handleRefreshPlan = () => {
     if (!wakeUpPlan) return;
 
-    // Recalculate the plan with the same parameters but using the updated algorithm
     const refreshedPlan = calculateWakeUpPlan(
       wakeUpPlan.currentWakeTime,
       wakeUpPlan.targetWakeTime,
       wakeUpPlan.targetDate
     );
 
-    // Preserve completed status from the original plan
     const updatedPlan = {
       ...refreshedPlan,
       intervals: refreshedPlan.intervals.map(newInterval => {
@@ -46,11 +42,9 @@ const Progress = () => {
           completed: originalInterval ? originalInterval.completed : false
         };
       }),
-      // Preserve adjustment history if any
       adjustmentHistory: wakeUpPlan.adjustmentHistory || []
     };
 
-    // Update the plan in the store
     setWakeUpPlan(updatedPlan);
 
     toast({
@@ -60,11 +54,6 @@ const Progress = () => {
     });
   };
   
-  // Function to manually open recalculation modal
-  const handleOpenRecalculationModal = () => {
-    setShowRecalculationModal(true);
-  };
-  
   // Analyze plan to see if it needs adjustment
   const planAnalysis = wakeUpPlan ? analyzeWakeUpPlan(wakeUpPlan) : { needsReset: false, reason: null };
 
@@ -72,12 +61,10 @@ const Progress = () => {
   useEffect(() => {
     if (!wakeUpPlan || !checkInHistory || checkInHistory.length === 0) return;
     
-    // Only run if we have enough check-in history and auto-replan is recommended
     if (shouldAutoReplan(checkInHistory) && !autoAdjusted) {
       const newPlan = autoReplanWakeUpSchedule(wakeUpPlan, checkInHistory);
       
       if (newPlan) {
-        // Update the plan in the store
         setWakeUpPlan(newPlan);
         setAutoAdjusted(true);
         
@@ -93,7 +80,6 @@ const Progress = () => {
   // Automatically check for disruptions on component mount
   useEffect(() => {
     if (wakeUpPlan && planAnalysis.needsReset && !showRecalculationModal && !autoAdjusted) {
-      // Wait a moment before showing the modal to avoid immediate popup on page load
       const timer = setTimeout(() => {
         setShowRecalculationModal(true);
       }, 1000);
@@ -120,20 +106,6 @@ const Progress = () => {
               <RefreshCw className="h-4 w-4" />
               <span>Refresh Plan</span>
             </Button>
-            
-            <Button
-              variant={planAnalysis.needsReset ? "default" : "outline"}
-              size="sm"
-              onClick={handleOpenRecalculationModal}
-              className={`flex items-center gap-2 ${
-                planAnalysis.needsReset 
-                  ? "bg-coral hover:bg-coral/90 text-white" 
-                  : "text-indigo/70 hover:text-indigo"
-              }`}
-            >
-              <Zap className="h-4 w-4" />
-              <span>Recalculate</span>
-            </Button>
           </div>
         )}
       </div>
@@ -156,13 +128,6 @@ const Progress = () => {
           <AlertTitle className="text-coral">Your wake-up plan needs adjustment</AlertTitle>
           <AlertDescription>
             {planAnalysis.reason || "Your progress has deviated from the original plan."}
-            <Button 
-              variant="link" 
-              className="text-coral p-0 h-auto ml-1"
-              onClick={handleOpenRecalculationModal}
-            >
-              Recalculate plan now →
-            </Button>
           </AlertDescription>
         </Alert>
       )}

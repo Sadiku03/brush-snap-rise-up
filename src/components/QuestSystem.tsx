@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Award, Star, RefreshCw, Info, ChevronDown, ChevronRight } from "lucide-react";
+import { Award, Star, RefreshCw, Info, ChevronDown, ChevronRight, Calendar, List } from "lucide-react";
 import { useUserStore } from '@/store/userStore';
 import { 
   generateDailyQuests, 
@@ -115,16 +116,38 @@ const QuestSystem = () => {
           <h2 className="text-xl font-bold text-indigo">Daily Quests</h2>
         </div>
         
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefreshQuests}
-          disabled={refreshing}
-          className="text-indigo/70 border-lilac/30"
-        >
-          <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* View Mode Toggle */}
+          <div className="border border-lilac/30 rounded-md flex overflow-hidden mr-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className={`rounded-none ${viewMode === 'list' ? 'bg-lilac/20 text-indigo' : 'text-indigo/70'}`}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('calendar')}
+              className={`rounded-none ${viewMode === 'calendar' ? 'bg-lilac/20 text-indigo' : 'text-indigo/70'}`}
+            >
+              <Calendar className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefreshQuests}
+            disabled={refreshing}
+            className="text-indigo/70 border-lilac/30"
+          >
+            <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
       
       <div className="p-5">
@@ -182,71 +205,79 @@ const QuestSystem = () => {
           </div>
         </div>
         
-        <div className="space-y-6">
-          {/* Available Quests Section with Collapsible */}
-          <Collapsible
-            open={availableExpanded}
-            onOpenChange={setAvailableExpanded}
-            className="border border-amber-100 rounded-lg overflow-hidden"
-          >
-            <div className="bg-amber-50 p-3">
-              <CollapsibleTrigger className="flex items-center justify-between w-full">
-                <h3 className="text-sm font-semibold text-amber-700 uppercase tracking-wider">
-                  Available Quests
-                </h3>
-                {availableExpanded ? (
-                  <ChevronDown className="h-5 w-5 text-amber-500" />
-                ) : (
-                  <ChevronRight className="h-5 w-5 text-amber-500" />
-                )}
-              </CollapsibleTrigger>
-            </div>
-            
-            <CollapsibleContent className="p-3 bg-white">
-              <QuestList 
-                quests={availableQuests}
-                onCompleteQuest={handleCompleteQuest}
-                streakMultiplier={streakMultiplier}
-                calculateAdjustedXp={calculateAdjustedXp}
-                emptyMessage="You've completed all quests for today! New quests will be available tomorrow."
-                showDetails={false}
-              />
-            </CollapsibleContent>
-          </Collapsible>
-          
-          {/* Completed Quests Section with Collapsible */}
-          {completedQuests.length > 0 && (
+        {viewMode === 'list' ? (
+          <div className="space-y-6">
+            {/* Available Quests Section with Collapsible */}
             <Collapsible
-              open={completedExpanded}
-              onOpenChange={setCompletedExpanded}
-              className="border border-emerald-100 rounded-lg overflow-hidden"
+              open={availableExpanded}
+              onOpenChange={setAvailableExpanded}
+              className="border border-amber-100 rounded-lg overflow-hidden"
             >
-              <div className="bg-emerald-50 p-3">
+              <div className="bg-amber-50 p-3">
                 <CollapsibleTrigger className="flex items-center justify-between w-full">
-                  <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wider">
-                    Completed Quests
+                  <h3 className="text-sm font-semibold text-amber-700 uppercase tracking-wider">
+                    Available Quests
                   </h3>
-                  {completedExpanded ? (
-                    <ChevronDown className="h-5 w-5 text-emerald-500" />
+                  {availableExpanded ? (
+                    <ChevronDown className="h-5 w-5 text-amber-500" />
                   ) : (
-                    <ChevronRight className="h-5 w-5 text-emerald-500" />
+                    <ChevronRight className="h-5 w-5 text-amber-500" />
                   )}
                 </CollapsibleTrigger>
               </div>
               
               <CollapsibleContent className="p-3 bg-white">
-                <QuestList
-                  quests={completedQuests}
-                  isCompleted={true}
+                <QuestList 
+                  quests={availableQuests}
+                  onCompleteQuest={handleCompleteQuest}
                   streakMultiplier={streakMultiplier}
                   calculateAdjustedXp={calculateAdjustedXp}
-                  emptyMessage="No completed quests yet. Complete some quests to see them here!"
-                  showDetails={true}
+                  emptyMessage="You've completed all quests for today! New quests will be available tomorrow."
+                  showDetails={false}
                 />
               </CollapsibleContent>
             </Collapsible>
-          )}
-        </div>
+            
+            {/* Completed Quests Section with Collapsible */}
+            {completedQuests.length > 0 && (
+              <Collapsible
+                open={completedExpanded}
+                onOpenChange={setCompletedExpanded}
+                className="border border-emerald-100 rounded-lg overflow-hidden"
+              >
+                <div className="bg-emerald-50 p-3">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full">
+                    <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wider">
+                      Completed Quests
+                    </h3>
+                    {completedExpanded ? (
+                      <ChevronDown className="h-5 w-5 text-emerald-500" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 text-emerald-500" />
+                    )}
+                  </CollapsibleTrigger>
+                </div>
+                
+                <CollapsibleContent className="p-3 bg-white">
+                  <QuestList
+                    quests={completedQuests}
+                    isCompleted={true}
+                    streakMultiplier={streakMultiplier}
+                    calculateAdjustedXp={calculateAdjustedXp}
+                    emptyMessage="No completed quests yet. Complete some quests to see them here!"
+                    showDetails={true}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </div>
+        ) : (
+          <QuestCalendarView 
+            completedQuests={completedQuests}
+            allHistoricalQuests={questHistory.questsByDate}
+            completionStatus={questHistory.completionStatus}
+          />
+        )}
       </div>
     </div>
   );

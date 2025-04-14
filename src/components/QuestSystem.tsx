@@ -57,6 +57,13 @@ const QuestSystem = () => {
   const xpRemaining = getXpUntilNextLevel(progress.level, progress.xp);
   
   const weeklyStreakProgress = Math.min(progress.streak / 7, 1) * 100;
+
+  // Filter completed quests to show only today's completed quests
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayCompletedQuests = completedQuests.filter(quest => {
+    const questDate = new Date(quest.dateAssigned).toISOString().split('T')[0];
+    return questDate === todayStr;
+  });
   
   const calculateAdjustedXp = (baseXp: number) => {
     return calculateXpWithStreak(baseXp, progress.streak);
@@ -191,8 +198,8 @@ const QuestSystem = () => {
                   </CollapsibleContent>
                 </Collapsible>
                 
-                {/* Completed Quests Section */}
-                {completedQuests.length > 0 && (
+                {/* Completed Quests Section - Only show if there are completed quests for today */}
+                {todayCompletedQuests.length > 0 && (
                   <Collapsible
                     open={completedExpanded}
                     onOpenChange={setCompletedExpanded}
@@ -213,11 +220,11 @@ const QuestSystem = () => {
                     
                     <CollapsibleContent className="p-3 bg-white">
                       <QuestList
-                        quests={completedQuests}
+                        quests={todayCompletedQuests}
                         isCompleted={true}
                         streakMultiplier={streakMultiplier}
                         calculateAdjustedXp={calculateAdjustedXp}
-                        emptyMessage="No completed quests yet. Complete some quests to see them here!"
+                        emptyMessage="No completed quests yet today. Complete some quests to see them here!"
                         showDetails={true}
                       />
                     </CollapsibleContent>

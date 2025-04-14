@@ -1,17 +1,16 @@
 
 import { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { Camera, Upload, X, Check, Image as ImageIcon } from "lucide-react";
+import { Camera, X, Check, Image as ImageIcon } from "lucide-react";
 import { useUserStore } from '@/store/userStore';
 import { generateVerificationPrompt } from '@/utils/questManager';
 import { isValidWakeUpTime } from '@/utils/planCalculator';
 import { useToast } from '@/components/ui/use-toast';
 
 const BrushSnap = () => {
-  const [captureMode, setCaptureMode] = useState<'inactive' | 'camera' | 'upload'>('inactive');
+  const [captureMode, setCaptureMode] = useState<'inactive' | 'camera'>('inactive');
   const [image, setImage] = useState<string | null>(null);
   const [verificationPrompt, setVerificationPrompt] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { addBrushSnap, wakeUpPlan, recordWakeUp, brushSnaps } = useUserStore();
   const { toast } = useToast();
@@ -21,24 +20,9 @@ const BrushSnap = () => {
     setVerificationPrompt(prompt);
   };
   
-  const handleStartCapture = (mode: 'camera' | 'upload') => {
-    setCaptureMode(mode);
+  const handleStartCapture = () => {
+    setCaptureMode('camera');
     generatePrompt();
-    
-    if (mode === 'upload' && fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImage(reader.result as string);
-    };
-    reader.readAsDataURL(file);
   };
   
   const handleCancel = () => {
@@ -49,7 +33,7 @@ const BrushSnap = () => {
   const handleSubmit = () => {
     if (!image) return;
     
-    // In a real app, we would verify the timestamp from EXIF data
+    // In a real app, we would verify the timestamp from the camera's metadata
     // For now, we'll simulate a verification
     const timestamp = Date.now();
     const isValidTime = wakeUpPlan ? isValidWakeUpTime(wakeUpPlan, timestamp) : true;
@@ -123,40 +107,25 @@ const BrushSnap = () => {
             ) : (
               <div className="space-y-4">
                 <p className="text-indigo/70">
-                  Verify you're awake by taking a selfie with your toothbrush or 
-                  uploading a morning photo.
+                  Verify you're awake by taking a selfie with your toothbrush. Live capture is required
+                  to confirm you're really up and brushing!
                 </p>
                 
-                <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className="mt-4">
                   <Button
-                    onClick={() => handleStartCapture('camera')}
-                    className="bg-skyblue text-indigo hover:bg-skyblue/80 h-32 flex flex-col gap-2"
+                    onClick={handleStartCapture}
+                    className="bg-skyblue text-indigo hover:bg-skyblue/80 h-32 w-full flex flex-col gap-2"
                   >
                     <Camera className="h-8 w-8" />
-                    <span>Take Photo</span>
+                    <span>Take Photo Now</span>
                   </Button>
-                  
-                  <Button
-                    onClick={() => handleStartCapture('upload')}
-                    className="bg-lilac/20 text-indigo hover:bg-lilac/30 h-32 flex flex-col gap-2"
-                  >
-                    <Upload className="h-8 w-8" />
-                    <span>Upload Photo</span>
-                  </Button>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                  />
                 </div>
                 
                 <div className="bg-coral/10 p-4 rounded-lg border border-coral/20 mt-2">
-                  <h3 className="font-medium text-indigo mb-1">Why verify?</h3>
+                  <h3 className="font-medium text-indigo mb-1">Why live capture?</h3>
                   <p className="text-sm text-indigo/80">
-                    Morning verification helps build accountability and maintains your streak.
-                    It's a great way to track your progress visually over time!
+                    Live photo captures verify that you're actually awake at your set time. 
+                    This builds accountability and ensures your streak is genuine!
                   </p>
                 </div>
               </div>
@@ -173,21 +142,12 @@ const BrushSnap = () => {
               <div className="relative rounded-lg overflow-hidden border border-lilac/30">
                 <img src={image} alt="Verification" className="w-full h-64 object-cover" />
               </div>
-            ) : captureMode === 'camera' ? (
+            ) : (
               <div className="bg-indigo/5 border border-dashed border-indigo/30 rounded-lg h-64 flex items-center justify-center">
                 <div className="text-center">
                   <Camera className="h-10 w-10 text-indigo/40 mx-auto mb-2" />
                   <p className="text-indigo/60">
                     Camera integration will be available in a future update
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-indigo/5 border border-dashed border-indigo/30 rounded-lg h-64 flex items-center justify-center">
-                <div className="text-center">
-                  <ImageIcon className="h-10 w-10 text-indigo/40 mx-auto mb-2" />
-                  <p className="text-indigo/60">
-                    Drag and drop an image or click "Upload"
                   </p>
                 </div>
               </div>
@@ -206,23 +166,15 @@ const BrushSnap = () => {
               {image ? (
                 <Button
                   onClick={handleSubmit}
-                  className="btn-primary flex items-center gap-1"
+                  className="bg-coral hover:bg-coral/90 text-white flex items-center gap-1"
                 >
                   <Check className="h-4 w-4" />
                   Verify
                 </Button>
-              ) : captureMode === 'upload' ? (
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="btn-primary flex items-center gap-1"
-                >
-                  <Upload className="h-4 w-4" />
-                  Upload
-                </Button>
               ) : (
                 <Button
                   onClick={() => setImage('https://source.unsplash.com/random/800x600/?morning,toothbrush')}
-                  className="btn-primary flex items-center gap-1"
+                  className="bg-coral hover:bg-coral/90 text-white flex items-center gap-1"
                 >
                   <Camera className="h-4 w-4" />
                   Capture

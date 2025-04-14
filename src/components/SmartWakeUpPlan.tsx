@@ -29,7 +29,7 @@ const SmartWakeUpPlan = () => {
   
   const nextWakeUp = wakeUpPlan ? getNextWakeUpTime(wakeUpPlan) : null;
   
-  const forceShowCheckIn = true; // Changed to true for testing
+  const forceShowCheckIn = false; // Changed to false to disable forced check-in
   
   useEffect(() => {
     if (!wakeUpPlan || !nextWakeUp) return;

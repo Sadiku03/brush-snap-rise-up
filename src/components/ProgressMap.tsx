@@ -1,3 +1,4 @@
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useUserStore } from '@/store/userStore';
 import { useState } from 'react';
@@ -67,6 +68,29 @@ const ProgressMap = () => {
   };
   
   const chartData = getChartData();
+  
+  // Calculate the min and max values for the Y axis to ensure all points are covered
+  const getYAxisDomain = () => {
+    if (!chartData.length) return [360, 540]; // Default range if no data
+    
+    let minValue = Number.MAX_SAFE_INTEGER;
+    let maxValue = Number.MIN_SAFE_INTEGER;
+    
+    chartData.forEach(point => {
+      if (point.plannedWakeUp < minValue) minValue = point.plannedWakeUp;
+      if (point.plannedWakeUp > maxValue) maxValue = point.plannedWakeUp;
+      
+      if (point.actualWakeUp !== null) {
+        if (point.actualWakeUp < minValue) minValue = point.actualWakeUp;
+        if (point.actualWakeUp > maxValue) maxValue = point.actualWakeUp;
+      }
+    });
+    
+    // Add padding (30 minutes) to ensure points aren't at the edges
+    return [Math.max(0, minValue - 30), maxValue + 30];
+  };
+  
+  const yAxisDomain = getYAxisDomain();
 
   const calculateProgress = () => {
     if (!wakeUpPlan) return 0;
@@ -86,7 +110,7 @@ const ProgressMap = () => {
   };
   
   return (
-    <div className="w-full rounded-lg bg-white p-4 space-y-4">
+    <div className="w-full space-y-6 py-4">
       <div className="flex flex-row justify-between items-center">
         <h3 className="text-xl font-bold text-indigo">Your Sleep Journey</h3>
         <Button 
@@ -99,9 +123,9 @@ const ProgressMap = () => {
         </Button>
       </div>
       
-      <div className={`transition-all duration-300 ${expanded ? 'max-h-[500px]' : 'max-h-64'} overflow-hidden`}>
+      <div className={`transition-all duration-300 ${expanded ? 'max-h-[600px]' : 'max-h-[400px]'} overflow-hidden`}>
         {wakeUpPlan ? (
-          <div className="space-y-3">
+          <div className="space-y-5">
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-indigo/60 mb-1">Journey Progress</p>
@@ -118,15 +142,15 @@ const ProgressMap = () => {
               </div>
             </div>
             
-            <div className="h-48 mt-2">
+            <div className={`${expanded ? 'h-[400px]' : 'h-[300px]'} mt-4`}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
                   margin={{
-                    top: 10,
-                    right: 10,
+                    top: 20,
+                    right: 20,
                     left: 5,
-                    bottom: 10
+                    bottom: 20
                   }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f1f1" />
@@ -139,8 +163,7 @@ const ProgressMap = () => {
                     tickMargin={8}
                   />
                   <YAxis 
-                    domain={['auto', 'auto']}
-                    ticks={[360, 390, 420, 450, 480, 510, 540]}
+                    domain={yAxisDomain}
                     tickFormatter={formatMinutes} 
                     tick={{
                       fontSize: isMobile ? 10 : 12,
@@ -246,7 +269,7 @@ const ProgressMap = () => {
             )}
           </div>
         ) : (
-          <div className="text-center py-6">
+          <div className="text-center py-12">
             <p className="text-indigo/70 mb-3 text-sm">
               Create a wake-up plan to see your progress journey.
             </p>

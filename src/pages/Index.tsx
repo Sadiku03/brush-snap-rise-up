@@ -1,14 +1,23 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import LandingPage from "@/components/LandingPage";
+import OnboardingFlow from "@/components/OnboardingFlow";
+import { useUserStore } from "@/store/userStore";
+import { Navigate } from "react-router-dom";
 
 const Index = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
-    </div>
-  );
+  const { name, isOnboarded } = useUserStore();
+  
+  // If user is already onboarded, redirect them to app
+  if (name && isOnboarded) {
+    return <Navigate to="/app" replace />;
+  }
+  
+  // If user has a name but isn't onboarded, show onboarding
+  if (name && !isOnboarded) {
+    return <OnboardingFlow />;
+  }
+  
+  // Otherwise, show landing page
+  return <LandingPage />;
 };
 
 export default Index;

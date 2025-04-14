@@ -1,9 +1,14 @@
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useUserStore } from '@/store/userStore';
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent 
+} from "@/components/ui/chart";
 
 const ProgressMap = () => {
   const { wakeUpPlan, brushSnaps } = useUserStore();
@@ -13,13 +18,23 @@ const ProgressMap = () => {
   const getChartData = () => {
     if (!wakeUpPlan) return [];
     
+    // Map through the intervals to create data points
     return wakeUpPlan.intervals.map(interval => {
       // Convert wake time to minutes for the chart
       const [hours, minutes] = interval.wakeTime.split(':').map(Number);
       const timeInMinutes = hours * 60 + minutes;
       
-      // Check if this interval was completed
-      const completed = interval.completed;
+      // Find actual wake-up verification for this date if it exists
+      const verification = brushSnaps.find(snap => 
+        new Date(snap.timestamp).toISOString().split('T')[0] === interval.date
+      );
+      
+      // If verification exists, get the actual wake-up time
+      let actualWakeUpMinutes = null;
+      if (verification && verification.timestamp) {
+        const verificationTime = new Date(verification.timestamp);
+        actualWakeUpMinutes = verificationTime.getHours() * 60 + verificationTime.getMinutes();
+      }
       
       return {
         date: new Date(interval.date).toLocaleDateString(undefined, {
@@ -27,7 +42,10 @@ const ProgressMap = () => {
           day: 'numeric'
         }),
         plannedWakeUp: timeInMinutes,
-        actualWakeUp: completed ? timeInMinutes : null,
+        actualWakeUp: actualWakeUpMinutes,
+        // Store the original date for comparison
+        originalDate: interval.date,
+        completed: interval.completed
       };
     });
   };
@@ -48,6 +66,17 @@ const ProgressMap = () => {
     const completedIntervals = wakeUpPlan.intervals.filter(i => i.completed).length;
     
     return totalIntervals > 0 ? Math.round((completedIntervals / totalIntervals) * 100) : 0;
+  };
+  
+  const chartConfig = {
+    planned: {
+      label: "Planned",
+      color: "#BFD7EA" // skyblue
+    },
+    actual: {
+      label: "Actual",
+      color: "#FF7A5A" // coral
+    }
   };
   
   return (
@@ -90,16 +119,16 @@ const ProgressMap = () => {
                 <div className="flex items-center gap-2 bg-lilac/20 px-3 py-1.5 rounded-full">
                   <Calendar className="h-4 w-4 text-coral" />
                   <span className="text-sm font-medium text-indigo">
-                    {brushSnaps.length} verifications
+                    {brushSnaps.length} Wake-Up Checks
                   </span>
                 </div>
               </div>
               
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
+                <ChartContainer config={chartConfig} className="h-full">
+                  <LineChart 
                     data={chartData}
-                    margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
+                    margin={{ top: 20, right: 20, left: 0, bottom: 10 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                     <XAxis 
@@ -112,16 +141,17 @@ const ProgressMap = () => {
                       tick={{ fontSize: 12, fill: '#2D3142' }}
                       tickMargin={10}
                     />
-                    <Tooltip
-                      formatter={(value: any) => [formatMinutes(value), 'Wake-Up Time']}
-                      labelStyle={{ color: '#2D3142' }}
-                      contentStyle={{ 
-                        backgroundColor: 'white', 
-                        border: '1px solid #D8CFF9',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-                      }}
+                    <ChartTooltip 
+                      content={
+                        <ChartTooltipContent 
+                          formatter={(value: any, name: string) => [
+                            formatMinutes(value), 
+                            name === "plannedWakeUp" ? "Planned" : "Actual"
+                          ]}
+                        />
+                      }
                     />
+                    <Legend />
                     <Line
                       type="monotone"
                       dataKey="plannedWakeUp"
@@ -140,52 +170,69 @@ const ProgressMap = () => {
                       name="Actual"
                     />
                   </LineChart>
-                </ResponsiveContainer>
+                </ChartContainer>
               </div>
               
               {expanded && (
                 <div className="pt-4 space-y-4">
                   <h3 className="font-semibold text-indigo">Wake-Up Milestones</h3>
                   <div className="space-y-2">
-                    {wakeUpPlan.intervals.map((interval, index) => (
-                      <div
-                        key={index}
-                        className={`p-3 rounded-lg border flex justify-between items-center
-                          ${interval.completed 
-                            ? 'bg-emerald-50 border-emerald-200' 
-                            : 'bg-white border-lilac/20'}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div 
-                            className={`w-8 h-8 rounded-full flex items-center justify-center
-                              ${interval.completed 
-                                ? 'bg-emerald-100 text-emerald-600' 
-                                : 'bg-lilac/20 text-indigo/60'}`}
-                          >
-                            {index + 1}
+                    {wakeUpPlan.intervals.map((interval, index) => {
+                      // Find matching brush snap for this day, if any
+                      const brushSnap = brushSnaps.find(snap => 
+                        new Date(snap.timestamp).toISOString().split('T')[0] === interval.date
+                      );
+                      
+                      // Format verification time if it exists
+                      const verificationTime = brushSnap ? 
+                        new Date(brushSnap.timestamp).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : null;
+                        
+                      return (
+                        <div
+                          key={index}
+                          className={`p-3 rounded-lg border flex justify-between items-center
+                            ${interval.completed 
+                              ? 'bg-emerald-50 border-emerald-200' 
+                              : 'bg-white border-lilac/20'}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className={`w-8 h-8 rounded-full flex items-center justify-center
+                                ${interval.completed 
+                                  ? 'bg-emerald-100 text-emerald-600' 
+                                  : 'bg-lilac/20 text-indigo/60'}`}
+                            >
+                              {index + 1}
+                            </div>
+                            <div>
+                              <p className="font-medium text-indigo">
+                                {new Date(interval.date).toLocaleDateString(undefined, {
+                                  weekday: 'short',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </p>
+                              <div className="flex flex-col text-sm text-indigo/70">
+                                <span>Planned: {interval.wakeTime}</span>
+                                {verificationTime && (
+                                  <span className="text-coral">Actual: {verificationTime}</span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium text-indigo">
-                              {new Date(interval.date).toLocaleDateString(undefined, {
-                                weekday: 'short',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
-                            </p>
-                            <p className="text-sm text-indigo/70">
-                              Wake-up time: {interval.wakeTime}
-                            </p>
+                          <div className="flex items-center gap-2">
+                            {interval.completed && (
+                              <span className="text-xs bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full font-medium">
+                                Completed
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {interval.completed && (
-                            <span className="text-xs bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full font-medium">
-                              Completed
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

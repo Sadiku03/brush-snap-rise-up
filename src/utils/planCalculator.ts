@@ -1,8 +1,8 @@
-
 import { WakeUpPlan } from "../store/userStore";
 
 /**
  * Calculates wake up intervals to gradually shift from current to target time
+ * using a block-based approach for more stability
  */
 export function calculateWakeUpPlan(
   currentWakeTime: string,
@@ -11,6 +11,7 @@ export function calculateWakeUpPlan(
 ): WakeUpPlan {
   // Parse input dates and times
   const targetDateObj = new Date(targetDate);
+  const currentDate = new Date();
   
   // Parse times (format: "HH:MM")
   const [currentHours, currentMinutes] = currentWakeTime.split(':').map(Number);
@@ -20,11 +21,17 @@ export function calculateWakeUpPlan(
   const currentWakeMinutes = currentHours * 60 + currentMinutes;
   const targetWakeMinutes = targetHours * 60 + targetMinutes;
   
+  // Calculate total days until target
+  const daysUntilTarget = Math.max(
+    1,
+    Math.ceil((targetDateObj.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24))
+  );
+  
   // Calculate the time difference in minutes
   let diffMinutes = targetWakeMinutes - currentWakeMinutes;
   
   // If the target wake time is earlier in the day (e.g., going from 8:00 to 6:00)
-  // We need to adjust by subtracting from 24 hours (1440 minutes)
+  // We need to adjust by adding 24 hours (1440 minutes) to make the difference positive
   if (diffMinutes > 0) {
     diffMinutes = diffMinutes - 1440;
   }
@@ -32,37 +39,31 @@ export function calculateWakeUpPlan(
   // Get the absolute difference
   const absDiffMinutes = Math.abs(diffMinutes);
   
-  // Calculate days until target date
-  const currentDate = new Date();
-  const daysUntilTarget = Math.max(
-    1,
-    Math.ceil((targetDateObj.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24))
-  );
+  // Define block size (number of days to keep the same wake-up time)
+  const blockDays = 3; // Keep the same wake-up time for 3 days
   
-  // Determine the number of intervals
-  // Use a 15-minute adjustment every 2-3 days depending on the total time difference
-  const adjustmentMinutes = 15;
-  const numberOfIntervals = Math.ceil(absDiffMinutes / adjustmentMinutes);
+  // Calculate daily decrement in minutes
+  const dailyDecrement = absDiffMinutes / daysUntilTarget;
   
-  // Calculate the days between adjustments
-  const daysBetweenAdjustments = Math.max(2, Math.floor(daysUntilTarget / numberOfIntervals));
-  
-  // Generate intervals
+  // Generate the schedule
   const intervals = [];
-  let currentAdjustment = 0;
-  let currentIntervalDate = new Date();
+  let currentIntervalDate = new Date(currentDate);
   
-  for (let i = 0; i < numberOfIntervals; i++) {
-    // Calculate the new wake time for this interval
-    currentAdjustment += adjustmentMinutes;
+  for (let day = 0; day < daysUntilTarget; day++) {
+    // Calculate the block index
+    const blockIndex = Math.floor(day / blockDays);
+    
+    // Calculate minutes to adjust based on the block
+    const minutesToAdjust = blockIndex * blockDays * dailyDecrement;
+    
     let adjustedMinutes = currentWakeMinutes;
     
     if (diffMinutes < 0) {
       // Earlier wake up (e.g., 8:00 to 6:00)
-      adjustedMinutes = (currentWakeMinutes - currentAdjustment + 1440) % 1440;
+      adjustedMinutes = (currentWakeMinutes - minutesToAdjust + 1440) % 1440;
     } else {
       // Later wake up (e.g., 6:00 to 8:00)
-      adjustedMinutes = (currentWakeMinutes + currentAdjustment) % 1440;
+      adjustedMinutes = (currentWakeMinutes + minutesToAdjust) % 1440;
     }
     
     // Convert adjusted minutes back to hours:minutes format
@@ -71,17 +72,25 @@ export function calculateWakeUpPlan(
     const formattedTime = `${adjustedHours.toString().padStart(2, '0')}:${adjustedMins.toString().padStart(2, '0')}`;
     
     // Add days to the current date for this interval
-    currentIntervalDate = new Date(currentIntervalDate);
-    currentIntervalDate.setDate(currentIntervalDate.getDate() + (i === 0 ? 1 : daysBetweenAdjustments));
+    const intervalDate = new Date(currentIntervalDate);
+    intervalDate.setDate(intervalDate.getDate() + day);
+    const dateString = intervalDate.toISOString().split('T')[0];
     
-    intervals.push({
-      date: currentIntervalDate.toISOString().split('T')[0],
-      wakeTime: formattedTime,
-      completed: false
-    });
+    // Only add unique dates/times to avoid duplicates within blocks
+    const alreadyAdded = intervals.some(
+      interval => interval.date === dateString && interval.wakeTime === formattedTime
+    );
     
-    // Stop if we've reached the target date
-    if (currentIntervalDate >= targetDateObj) {
+    if (!alreadyAdded) {
+      intervals.push({
+        date: dateString,
+        wakeTime: formattedTime,
+        completed: false
+      });
+    }
+    
+    // Stop if we've reached or passed the target date
+    if (intervalDate >= targetDateObj) {
       break;
     }
   }
@@ -93,12 +102,30 @@ export function calculateWakeUpPlan(
     completed: false
   });
   
+  // Remove duplicates and sort by date
+  const uniqueIntervals = removeDuplicateIntervals(intervals);
+  
   return {
     currentWakeTime,
     targetWakeTime,
     targetDate,
-    intervals
+    intervals: uniqueIntervals
   };
+}
+
+/**
+ * Helper function to remove duplicate intervals with the same date and wake time
+ */
+function removeDuplicateIntervals(intervals: Array<{date: string, wakeTime: string, completed: boolean}>) {
+  const uniqueMap = new Map();
+  
+  intervals.forEach(interval => {
+    const key = `${interval.date}-${interval.wakeTime}`;
+    uniqueMap.set(key, interval);
+  });
+  
+  return Array.from(uniqueMap.values())
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 /**

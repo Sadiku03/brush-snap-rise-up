@@ -1,4 +1,3 @@
-
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useUserStore } from '@/store/userStore';
 import { Button } from "@/components/ui/button";
@@ -111,10 +110,8 @@ const ProgressMap = () => {
   const hasAdjustments = wakeUpPlan?.intervals.some(interval => interval.isAdjusted) || false;
   const adjustmentCount = wakeUpPlan?.adjustmentHistory?.length || 0;
   
-  // Function to get the stroke dash array based on whether the data point is adjusted
-  const getStrokeDashArray = (d: ChartDataPoint) => {
-    return d.isAdjusted ? "5 5" : "0";
-  };
+  const standardIntervals = chartData.filter(d => !d.isAdjusted);
+  const adjustedIntervals = chartData.filter(d => d.isAdjusted);
   
   return (
     <div className="w-full space-y-6 py-4">
@@ -195,21 +192,44 @@ const ProgressMap = () => {
                       paddingTop: '10px'
                     }}
                   />
+                  
                   <Line 
                     type="monotone" 
                     dataKey="plannedWakeUp" 
                     stroke="#FF7A5A" 
                     strokeWidth={2} 
-                    strokeDasharray={getStrokeDashArray}
+                    name="Target Wake-Up" 
+                    data={standardIntervals}
+                    connectNulls={true}
                     dot={{
                       r: 3,
                       fill: '#FF7A5A',
                       strokeWidth: 1,
                       stroke: '#FFF'
                     }} 
-                    name="Target Wake-Up" 
                     activeDot={{ r: 5 }}
                   />
+                  
+                  {adjustedIntervals.length > 0 && (
+                    <Line 
+                      type="monotone" 
+                      dataKey="plannedWakeUp" 
+                      stroke="#FF7A5A" 
+                      strokeWidth={2} 
+                      strokeDasharray="5 5"
+                      name="Adjusted Target" 
+                      data={adjustedIntervals}
+                      connectNulls={true}
+                      dot={{
+                        r: 3,
+                        fill: '#FF7A5A',
+                        strokeWidth: 1,
+                        stroke: '#FFF'
+                      }} 
+                      activeDot={{ r: 5 }}
+                    />
+                  )}
+                  
                   <Line 
                     type="monotone" 
                     dataKey="actualWakeUp" 

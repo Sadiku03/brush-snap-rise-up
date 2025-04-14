@@ -86,9 +86,9 @@ const ScheduleCalendar = ({ wakeUpPlan }: ScheduleCalendarProps) => {
             selected={dates.map(d => d.date)}
             className="w-full rounded-md bg-white"
             components={{
-              Day: ({ day, ...props }) => (
-                <div {...props} className={`${props.className}`}>
-                  {renderDay(day)}
+              Day: ({ date }) => (
+                <div>
+                  {renderDay(date)}
                 </div>
               ),
             }}

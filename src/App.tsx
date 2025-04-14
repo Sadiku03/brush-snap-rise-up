@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useUserStore } from "@/store/userStore";
+import { Battery, Wifi } from "lucide-react";
 import Index from "./pages/Index";
 import AppLayout from "./pages/AppLayout";
 import NotFound from "./pages/NotFound";
@@ -16,6 +17,7 @@ const queryClient = new QueryClient();
 const MobileFrame = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const isAppRoute = location.pathname.startsWith('/app');
+  const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
   if (!isAppRoute) {
     return <>{children}</>;
@@ -26,18 +28,16 @@ const MobileFrame = ({ children }: { children: React.ReactNode }) => {
       <div className="mobile-frame">
         <div className="mobile-frame-notch" />
         <div className="mobile-status-bar">
-          <div>9:41</div>
-          <div className="flex items-center gap-1">
-            <span>5G</span>
-            <svg width="18" height="12" viewBox="0 0 18 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 9H3V3H1V9ZM5 9H7V1H5V9ZM9 9H11V5H9V9ZM13 9H15V7H13V9Z" fill="currentColor"/>
-              <rect x="0.5" y="0.5" width="17" height="11" rx="2.5" stroke="currentColor"/>
-            </svg>
-            <svg width="24" height="12" viewBox="0 0 24 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="0.5" y="0.5" width="21" height="11" rx="2.5" stroke="currentColor"/>
-              <rect x="2" y="2" width="18" height="8" rx="1" fill="currentColor"/>
-              <path d="M23 4V8C24.1046 8 25 7.10457 25 6C25 4.89543 24.1046 4 23 4Z" fill="currentColor"/>
-            </svg>
+          <div className="font-semibold">{currentTime}</div>
+          <div className="flex items-center gap-2">
+            <div className="text-[10px] font-medium">5G</div>
+            <Wifi size={14} className="opacity-90" />
+            <div className="relative">
+              <Battery size={16} className="opacity-90" />
+              <div className="absolute inset-0 right-1.5 flex items-center justify-start">
+                <div className="h-[6px] w-[6px] bg-green-500 rounded-full"></div>
+              </div>
+            </div>
           </div>
         </div>
         <div className="mobile-frame-content">

@@ -86,7 +86,7 @@
   }
   
   .mobile-frame {
-    @apply relative w-full max-w-[390px] h-[800px] bg-white rounded-[55px] overflow-hidden shadow-2xl border-[14px] border-indigo/10;
+    @apply relative w-full max-w-[390px] h-[800px] bg-white rounded-[40px] overflow-hidden shadow-2xl border-[14px] border-indigo/20;
   }
   
   .mobile-frame-notch {
@@ -103,20 +103,55 @@
   }
   
   .mobile-status-bar {
-    @apply absolute top-0 left-0 right-0 flex justify-between items-center px-6 py-1 text-[11px] font-semibold z-40 bg-transparent text-black;
+    @apply absolute top-0 left-0 right-0 flex justify-between items-center px-6 py-2 text-[12px] font-semibold z-40 bg-transparent text-black;
   }
   
   .mobile-home-indicator {
-    @apply absolute bottom-1 left-1/2 transform -translate-x-1/2 w-[30%] h-1 bg-black rounded-full opacity-20 z-40;
+    @apply absolute bottom-2 left-1/2 transform -translate-x-1/2 w-[30%] h-1 bg-black rounded-full opacity-30 z-40;
   }
   
   /* iOS-style drawer menu */
-  .ios-menu {
-    @apply bg-white/90 backdrop-blur-md;
+  .ios-drawer {
+    @apply !rounded-t-2xl !bg-white/90 !backdrop-blur-md !shadow-lg !border-t !border-lilac/20;
+  }
+  
+  .ios-drawer-overlay {
+    @apply !bg-black/30 !backdrop-blur-sm;
+  }
+  
+  .ios-menu-button {
+    @apply flex items-center gap-3 p-3 rounded-xl transition-colors;
+  }
+  
+  .ios-menu-button-active {
+    @apply bg-coral text-white;
+  }
+  
+  .ios-menu-button-inactive {
+    @apply text-indigo hover:bg-lilac/10;
   }
   
   /* Make sure the drawer overlay stays within the phone frame */
   [data-overlay-wrapper] {
     @apply !absolute;
+  }
+  
+  /* iOS-style animations */
+  @keyframes ios-slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  
+  @keyframes ios-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .ios-animate-slide-up {
+    animation: ios-slide-up 0.3s cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  
+  .ios-animate-fade-in {
+    animation: ios-fade-in 0.2s ease-out;
   }
 }

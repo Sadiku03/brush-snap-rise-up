@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
-import { Home, User, Award, BarChart, Moon, Menu, X, LogOut } from "lucide-react";
+import { Home, User, Award, BarChart, Moon, Menu, X, LogOut, Wifi, Battery } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
 import { useToast } from "@/components/ui/use-toast";
@@ -23,54 +23,67 @@ const AppLayout = () => {
   const location = useLocation();
   const { toast } = useToast();
   
+  const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
   
   const handleLogout = () => {
-    // Simulate logout (in a real app, would clear authentication)
     toast({
       title: "Logged Out",
       description: "You have been logged out successfully.",
       duration: 3000,
     });
     
-    // This will clear the local storage and reset the store
     window.localStorage.removeItem("risequest-storage");
-    // Reload the page to clear the state
     window.location.href = "/";
   };
   
+  // Helper function to get page title based on current route
+  const getPageTitle = () => {
+    const path = location.pathname;
+    if (path === '/app') return 'Dashboard';
+    if (path === '/app/profile') return 'Profile';
+    if (path === '/app/quests') return 'Quests';
+    if (path === '/app/progress') return 'Progress';
+    if (path === '/app/wind-down') return 'Wind Down';
+    return 'RiseQuest';
+  };
+  
   return (
-    <div className="min-h-full bg-sand">
-      {/* Mobile Header */}
-      <header className="bg-white border-b border-lilac/20 p-4 sticky top-0 z-10 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-indigo">RiseQuest</h1>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleMenu}
-          className="text-indigo"
-        >
-          {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </Button>
+    <div className="min-h-full bg-sand relative">
+      {/* iOS-Style Header */}
+      <header className="bg-white border-b border-lilac/20 sticky top-0 z-10">
+        <div className="px-4 py-3 flex justify-between items-center">
+          <h1 className="text-xl font-bold text-indigo">{getPageTitle()}</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleMenu}
+            className="text-indigo rounded-full h-9 w-9"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
       </header>
       
       {/* iOS-style Drawer Menu that stays within the iPhone frame */}
       <Drawer open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <DrawerContent className="ios-menu h-[70%] rounded-t-2xl" onClick={(e) => e.stopPropagation()}>
+        <DrawerContent className="ios-drawer h-[70%] max-h-[70%]" onClick={(e) => e.stopPropagation()}>
+          <div className="mx-auto mt-2 h-1 w-12 rounded-full bg-indigo/20"></div>
           <DrawerHeader className="text-center border-b border-lilac/10 pb-2">
             <DrawerTitle className="text-lg font-semibold text-indigo">Menu</DrawerTitle>
           </DrawerHeader>
           
-          <nav className="p-2 overflow-auto">
-            <div className="space-y-0.5">
+          <nav className="p-3 overflow-auto">
+            <div className="space-y-1">
               <Link
                 to="/app"
-                className={`flex items-center gap-3 p-3 rounded-lg ${
+                className={`ios-menu-button ${
                   location.pathname === '/app' 
-                    ? 'bg-coral text-white' 
-                    : 'text-indigo hover:bg-lilac/10'
+                    ? 'ios-menu-button-active' 
+                    : 'ios-menu-button-inactive'
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -80,10 +93,10 @@ const AppLayout = () => {
               
               <Link
                 to="/app/profile"
-                className={`flex items-center gap-3 p-3 rounded-lg ${
+                className={`ios-menu-button ${
                   location.pathname === '/app/profile' 
-                    ? 'bg-coral text-white' 
-                    : 'text-indigo hover:bg-lilac/10'
+                    ? 'ios-menu-button-active' 
+                    : 'ios-menu-button-inactive'
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -93,10 +106,10 @@ const AppLayout = () => {
               
               <Link
                 to="/app/quests"
-                className={`flex items-center gap-3 p-3 rounded-lg ${
+                className={`ios-menu-button ${
                   location.pathname === '/app/quests' 
-                    ? 'bg-coral text-white' 
-                    : 'text-indigo hover:bg-lilac/10'
+                    ? 'ios-menu-button-active' 
+                    : 'ios-menu-button-inactive'
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -106,10 +119,10 @@ const AppLayout = () => {
               
               <Link
                 to="/app/progress"
-                className={`flex items-center gap-3 p-3 rounded-lg ${
+                className={`ios-menu-button ${
                   location.pathname === '/app/progress' 
-                    ? 'bg-coral text-white' 
-                    : 'text-indigo hover:bg-lilac/10'
+                    ? 'ios-menu-button-active' 
+                    : 'ios-menu-button-inactive'
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -119,10 +132,10 @@ const AppLayout = () => {
               
               <Link
                 to="/app/wind-down"
-                className={`flex items-center gap-3 p-3 rounded-lg ${
+                className={`ios-menu-button ${
                   location.pathname === '/app/wind-down' 
-                    ? 'bg-coral text-white' 
-                    : 'text-indigo hover:bg-lilac/10'
+                    ? 'ios-menu-button-active' 
+                    : 'ios-menu-button-inactive'
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -132,10 +145,10 @@ const AppLayout = () => {
             </div>
           </nav>
           
-          <DrawerFooter className="pb-6 pt-2">
+          <DrawerFooter className="pb-8 pt-2">
             <Button 
               variant="outline" 
-              className="w-full border-coral/30 text-coral flex items-center justify-center gap-2"
+              className="w-full border-coral/30 text-coral flex items-center justify-center gap-2 ios-menu-button"
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4" />
@@ -156,46 +169,46 @@ const AppLayout = () => {
         </Routes>
       </main>
       
-      {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-lilac/20 flex justify-around py-2 z-10">
+      {/* iOS-Style Tab Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-lilac/20 flex justify-around py-3 z-10">
         <Link
           to="/app"
-          className={`p-2 rounded-lg flex flex-col items-center ${
+          className={`p-1 rounded-lg flex flex-col items-center ${
             location.pathname === '/app' ? 'text-coral' : 'text-indigo/70'
           }`}
         >
-          <Home className="h-6 w-6" />
-          <span className="text-xs mt-1">Home</span>
+          <Home className={`h-6 w-6 ${location.pathname === '/app' ? 'fill-coral/20' : ''}`} />
+          <span className="text-xs mt-1 font-medium">Home</span>
         </Link>
         
         <Link
           to="/app/quests"
-          className={`p-2 rounded-lg flex flex-col items-center ${
+          className={`p-1 rounded-lg flex flex-col items-center ${
             location.pathname === '/app/quests' ? 'text-coral' : 'text-indigo/70'
           }`}
         >
-          <Award className="h-6 w-6" />
-          <span className="text-xs mt-1">Quests</span>
+          <Award className={`h-6 w-6 ${location.pathname === '/app/quests' ? 'fill-coral/20' : ''}`} />
+          <span className="text-xs mt-1 font-medium">Quests</span>
         </Link>
         
         <Link
           to="/app/progress"
-          className={`p-2 rounded-lg flex flex-col items-center ${
+          className={`p-1 rounded-lg flex flex-col items-center ${
             location.pathname === '/app/progress' ? 'text-coral' : 'text-indigo/70'
           }`}
         >
-          <BarChart className="h-6 w-6" />
-          <span className="text-xs mt-1">Progress</span>
+          <BarChart className={`h-6 w-6 ${location.pathname === '/app/progress' ? 'fill-coral/20' : ''}`} />
+          <span className="text-xs mt-1 font-medium">Progress</span>
         </Link>
         
         <Link
           to="/app/profile"
-          className={`p-2 rounded-lg flex flex-col items-center ${
+          className={`p-1 rounded-lg flex flex-col items-center ${
             location.pathname === '/app/profile' ? 'text-coral' : 'text-indigo/70'
           }`}
         >
-          <User className="h-6 w-6" />
-          <span className="text-xs mt-1">Profile</span>
+          <User className={`h-6 w-6 ${location.pathname === '/app/profile' ? 'fill-coral/20' : ''}`} />
+          <span className="text-xs mt-1 font-medium">Profile</span>
         </Link>
       </nav>
     </div>

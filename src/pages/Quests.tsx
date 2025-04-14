@@ -1,5 +1,6 @@
 
 import QuestSystem from '@/components/QuestSystem';
+import UpcomingHabits from '@/components/UpcomingHabits';
 import { useUserStore } from '@/store/userStore';
 
 const Quests = () => {
@@ -19,6 +20,7 @@ const Quests = () => {
       
       <div className="grid grid-cols-1 gap-6">
         <QuestSystem />
+        <UpcomingHabits />
       </div>
     </div>
   );

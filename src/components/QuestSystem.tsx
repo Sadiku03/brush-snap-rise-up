@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Award, Star, RefreshCw, Info, ChevronDown, ChevronRight, Calendar, List, Lock } from "lucide-react";
+import { Award, Star, RefreshCw, Info, ChevronDown, ChevronRight, Calendar } from "lucide-react";
 import { useUserStore } from '@/store/userStore';
 import { 
   generateDailyQuests, 
@@ -9,12 +8,6 @@ import {
   getXpUntilNextLevel 
 } from '@/utils/questManager';
 import { useToast } from '@/components/ui/use-toast';
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import QuestList from './QuestList';
 import QuestCalendarView from './QuestCalendarView';
 import { useQuestHistory } from '@/hooks/useQuestHistory';
@@ -65,18 +58,10 @@ const QuestSystem = () => {
     return questCompletedDate === todayStr;
   });
   
-  // Get upcoming habits that are locked
-  const lockedHabits = allHabitQuests
-    .filter(habit => habit.levelRequired > progress.level)
-    .sort((a, b) => a.levelRequired - b.levelRequired)
-    .slice(0, 3);  // Show only the next few habits
-  
-  // Calculate unlocked categories and habits
   const unlockedHabits = allHabitQuests.filter(habit => habit.levelRequired <= progress.level);
   const totalUnlockedHabits = unlockedHabits.length;
   const totalHabits = allHabitQuests.length;
   
-  // Get unique categories that are unlocked
   const unlockedCategories = [...new Set(unlockedHabits.map(habit => habit.category))];
   const totalCategories = [...new Set(allHabitQuests.map(habit => habit.category))].length;
   
@@ -167,7 +152,6 @@ const QuestSystem = () => {
         )}
         
         <div className="space-y-6">
-          {/* Progress summary */}
           <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <div>
@@ -260,62 +244,6 @@ const QuestSystem = () => {
                       emptyMessage="No completed habits yet today. Complete some habits to see them here!"
                       showDetails={true}
                     />
-                  </CollapsibleContent>
-                </Collapsible>
-                
-                {/* Upcoming habits section */}
-                <Collapsible
-                  open={upcomingExpanded}
-                  onOpenChange={setUpcomingExpanded}
-                  className="border border-purple-100 rounded-lg overflow-hidden"
-                >
-                  <div className="bg-purple-50 p-3">
-                    <CollapsibleTrigger className="flex items-center justify-between w-full">
-                      <h3 className="text-sm font-semibold text-purple-700 uppercase tracking-wider">
-                        Upcoming Habits
-                      </h3>
-                      {upcomingExpanded ? (
-                        <ChevronDown className="h-5 w-5 text-purple-500" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5 text-purple-500" />
-                      )}
-                    </CollapsibleTrigger>
-                  </div>
-                  
-                  <CollapsibleContent className="p-3 bg-white">
-                    {lockedHabits.length > 0 ? (
-                      <div className="space-y-3">
-                        {lockedHabits.map(habit => (
-                          <div 
-                            key={habit.id}
-                            className="border border-purple-100 rounded-lg p-4 opacity-60 relative overflow-hidden"
-                          >
-                            <div className="absolute right-0 top-0 bg-purple-100 text-purple-700 px-2 py-1 text-xs font-medium rounded-bl-lg flex items-center">
-                              <Lock className="h-3 w-3 mr-1" />
-                              Level {habit.levelRequired}
-                            </div>
-                            <div className="mt-2">
-                              <p className="text-xs text-purple-600 uppercase font-medium mb-1">{habit.category}</p>
-                              <h4 className="font-medium text-purple-800">{habit.title}</h4>
-                              <p className="text-xs text-purple-600 mt-1">{habit.description}</p>
-                            </div>
-                            <div className="flex justify-between items-center mt-2">
-                              <span className="text-xs text-purple-600">
-                                Keep leveling up to unlock!
-                              </span>
-                              <div className="bg-purple-100 px-2 py-1 rounded-full flex items-center">
-                                <Star className="h-3 w-3 text-purple-700" />
-                                <span className="text-xs font-medium text-purple-700 ml-1">{habit.xp} XP</span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6">
-                        <p className="text-indigo/70">You've unlocked all available habits! Great job!</p>
-                      </div>
-                    )}
                   </CollapsibleContent>
                 </Collapsible>
               </div>

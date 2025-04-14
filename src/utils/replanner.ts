@@ -1,6 +1,7 @@
 
 import { DailyCheckIn } from './checkInTracker';
-import { WakeUpPlan, recalculateWakePlan } from '../utils/planCalculator';
+import { WakeUpPlan } from '../store/userStore';
+import { recalculateWakePlan } from '../utils/planCalculator';
 
 /**
  * Determines if the wake-up plan should be automatically recalculated

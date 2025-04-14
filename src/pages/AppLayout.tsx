@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Routes, Route, Link, useLocation, NavLink } from "react-router-dom";
-import { Home, User, Award, BarChart, Moon, Menu, X, LogOut, Wifi, Battery, Calendar } from "lucide-react";
+import { Home, User, Award, Calendar, Moon, Menu, X, LogOut, Wifi, Battery } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
 import { useToast } from "@/components/ui/use-toast";
@@ -133,10 +133,12 @@ const AppLayout = () => {
           }
           end
         >
-          <Home className={({ isActive }) => 
-            `h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`
-          } />
-          <span className="text-xs mt-1 font-medium">Home</span>
+          {({ isActive }) => (
+            <>
+              <Home className={`h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`} />
+              <span className="text-xs mt-1 font-medium">Home</span>
+            </>
+          )}
         </NavLink>
         
         <NavLink
@@ -147,10 +149,12 @@ const AppLayout = () => {
             }`
           }
         >
-          <Calendar className={({ isActive }) => 
-            `h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`
-          } />
-          <span className="text-xs mt-1 font-medium">Schedule</span>
+          {({ isActive }) => (
+            <>
+              <Calendar className={`h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`} />
+              <span className="text-xs mt-1 font-medium">Schedule</span>
+            </>
+          )}
         </NavLink>
         
         <NavLink
@@ -161,10 +165,12 @@ const AppLayout = () => {
             }`
           }
         >
-          <Award className={({ isActive }) => 
-            `h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`
-          } />
-          <span className="text-xs mt-1 font-medium">Quests</span>
+          {({ isActive }) => (
+            <>
+              <Award className={`h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`} />
+              <span className="text-xs mt-1 font-medium">Quests</span>
+            </>
+          )}
         </NavLink>
         
         <NavLink
@@ -175,10 +181,12 @@ const AppLayout = () => {
             }`
           }
         >
-          <User className={({ isActive }) => 
-            `h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`
-          } />
-          <span className="text-xs mt-1 font-medium">Profile</span>
+          {({ isActive }) => (
+            <>
+              <User className={`h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`} />
+              <span className="text-xs mt-1 font-medium">Profile</span>
+            </>
+          )}
         </NavLink>
       </nav>
     </div>

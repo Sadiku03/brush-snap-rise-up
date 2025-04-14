@@ -17,7 +17,6 @@ import {
 import QuestList from './QuestList';
 import QuestCalendarView from './QuestCalendarView';
 import { useQuestHistory } from '@/hooks/useQuestHistory';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const calculateXpWithStreak = (baseXp: number, streak: number): number => {
   const bonusPercentage = 0.1; // 10% bonus per day in streak
@@ -189,36 +188,12 @@ const QuestSystem = () => {
           
           {completedQuests.length > 0 && (
             <div className="mt-6">
-              <Tabs defaultValue="calendar" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="list">List View</TabsTrigger>
-                  <TabsTrigger value="calendar">Calendar View</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="list" className="mt-0">
-                  <h3 className="text-sm font-semibold text-indigo/60 uppercase tracking-wider mb-3">Completed Quests</h3>
-                  <QuestList 
-                    quests={completedQuests.slice(0, 5)}
-                    isCompleted={true}
-                    streakMultiplier={streakMultiplier}
-                    showDetails={false}
-                  />
-                  
-                  {completedQuests.length > 5 && (
-                    <p className="text-sm text-center text-indigo/60 mt-2">
-                      +{completedQuests.length - 5} more completed quests
-                    </p>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="calendar" className="mt-0">
-                  <QuestCalendarView 
-                    completedQuests={completedQuests}
-                    allHistoricalQuests={questHistory.byDate}
-                    completionStatus={questHistory.completionStatus}
-                  />
-                </TabsContent>
-              </Tabs>
+              <h3 className="text-sm font-semibold text-indigo/60 uppercase tracking-wider mb-3">Completed Quests</h3>
+              <QuestCalendarView 
+                completedQuests={completedQuests}
+                allHistoricalQuests={questHistory.byDate}
+                completionStatus={questHistory.completionStatus}
+              />
             </div>
           )}
         </div>

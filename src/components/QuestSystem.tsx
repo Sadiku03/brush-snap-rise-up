@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Award, Star, RefreshCw, Info, ChevronDown, ChevronRight, Calendar, List } from "lucide-react";
@@ -45,7 +44,6 @@ const QuestSystem = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [questsRefreshed, setQuestsRefreshed] = useState(false);
   
-  // State for expanded/collapsed sections
   const [dailyQuestsExpanded, setDailyQuestsExpanded] = useState(true);
   const [availableExpanded, setAvailableExpanded] = useState(true);
   const [completedExpanded, setCompletedExpanded] = useState(true);
@@ -58,11 +56,10 @@ const QuestSystem = () => {
   
   const weeklyStreakProgress = Math.min(progress.streak / 7, 1) * 100;
 
-  // Filter completed quests to show only today's completed quests
   const todayStr = new Date().toISOString().split('T')[0];
   const todayCompletedQuests = completedQuests.filter(quest => {
-    const questDate = new Date(quest.dateAssigned).toISOString().split('T')[0];
-    return questDate === todayStr;
+    const questCompletedDate = quest.dateCompleted ? new Date(quest.dateCompleted).toISOString().split('T')[0] : null;
+    return questCompletedDate === todayStr;
   });
   
   const calculateAdjustedXp = (baseXp: number) => {
@@ -146,7 +143,6 @@ const QuestSystem = () => {
         )}
         
         <div className="space-y-6">
-          {/* Daily Quests Collective Category */}
           <Collapsible
             open={dailyQuestsExpanded}
             onOpenChange={setDailyQuestsExpanded}
@@ -167,7 +163,6 @@ const QuestSystem = () => {
             
             <CollapsibleContent className="p-3 bg-white">
               <div className="space-y-4">
-                {/* Available Quests Section */}
                 <Collapsible
                   open={availableExpanded}
                   onOpenChange={setAvailableExpanded}
@@ -198,7 +193,6 @@ const QuestSystem = () => {
                   </CollapsibleContent>
                 </Collapsible>
                 
-                {/* Completed Quests Section - Only show if there are completed quests for today */}
                 {todayCompletedQuests.length > 0 && (
                   <Collapsible
                     open={completedExpanded}
@@ -234,7 +228,6 @@ const QuestSystem = () => {
             </CollapsibleContent>
           </Collapsible>
           
-          {/* Quest Calendar View remains outside the Daily Quests collapsible */}
           <QuestCalendarView 
             completedQuests={completedQuests}
             allHistoricalQuests={questHistory.byDate}

@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DailyCheckIn, logCheckIn, timeToMinutes } from '../utils/checkInTracker';
@@ -6,7 +5,7 @@ import { generateDailyQuests } from '../utils/questManager';
 
 export enum QuestCategory {
   MORNING = "Morning",
-  NIGHT = "Night",
+  NIGHT = "Night", 
   CONSISTENCY = "Consistency",
   GENERAL = "General"
 }
@@ -18,6 +17,7 @@ export interface Quest {
   xpReward: number;
   completed: boolean;
   dateAssigned: string;
+  dateCompleted?: string;
   category: QuestCategory;
   detailedDescription?: string;
 }
@@ -217,7 +217,11 @@ export const useUserStore = create<UserStore>()(
         const newAvailableQuests = [...availableQuests];
         newAvailableQuests.splice(questIndex, 1);
         
-        const completedQuest = { ...quest, completed: true };
+        const completedQuest = { 
+          ...quest, 
+          completed: true,
+          dateCompleted: new Date().toISOString()
+        };
         
         const streakAdjustedXp = calculateXpWithStreak(quest.xpReward, progress.streak);
         
@@ -281,7 +285,6 @@ export const useUserStore = create<UserStore>()(
           const shouldShowModal = wakeUpPlan ? 
             analyzeWakeUpPlan(wakeUpPlan).needsReset : false;
           
-          // Update checkInHistory with the new check-in
           let updatedCheckInHistory = [...checkInHistory];
           
           if (wakeUpPlan) {
@@ -326,7 +329,6 @@ export const useUserStore = create<UserStore>()(
         const { wakeUpPlan, checkInHistory } = get();
         if (!wakeUpPlan) return;
         
-        // Mark the wake-up as completed in the intervals
         const newIntervals = wakeUpPlan.intervals.map(interval => {
           if (interval.date === date) {
             return { ...interval, completed: true };
@@ -339,7 +341,6 @@ export const useUserStore = create<UserStore>()(
           intervals: newIntervals
         };
         
-        // Log the check-in to the history
         const todayInterval = wakeUpPlan.intervals.find(interval => interval.date === date);
         let updatedCheckInHistory = [...checkInHistory];
         
@@ -347,7 +348,7 @@ export const useUserStore = create<UserStore>()(
           const scheduledWakeMinutes = timeToMinutes(todayInterval.wakeTime);
           const actualWakeMinutes = actualWakeTime 
             ? timeToMinutes(actualWakeTime)
-            : scheduledWakeMinutes; // If no actual time provided, assume on-time
+            : scheduledWakeMinutes;
           
           updatedCheckInHistory = logCheckIn(checkInHistory, {
             date,

@@ -1,9 +1,11 @@
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useUserStore } from '@/store/userStore';
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+
 const ProgressMap = () => {
   const {
     wakeUpPlan,
@@ -33,6 +35,7 @@ const ProgressMap = () => {
         const randomOffset = Math.floor(Math.random() * 30) - 15; // -15 to +15 minutes
         actualWakeUpMinutes = timeInMinutes + randomOffset;
       }
+      
       return {
         date: new Date(interval.date).toLocaleDateString(undefined, {
           month: 'short',
@@ -42,15 +45,20 @@ const ProgressMap = () => {
         actualWakeUp: actualWakeUpMinutes,
         // Store the original date for comparison
         originalDate: interval.date,
-        completed: interval.completed
+        completed: interval.completed,
+        // Store the original formatted times for tooltip display
+        plannedWakeUpFormatted: interval.wakeTime,
+        actualWakeUpFormatted: actualWakeUpMinutes ? formatMinutes(actualWakeUpMinutes) : 'No check-in'
       };
     });
   };
+  
   const formatMinutes = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   };
+  
   const chartData = getChartData();
 
   // Calculate overall progress
@@ -60,6 +68,19 @@ const ProgressMap = () => {
     const completedIntervals = wakeUpPlan.intervals.filter(i => i.completed).length;
     return totalIntervals > 0 ? Math.round(completedIntervals / totalIntervals * 100) : 0;
   };
+  
+  // Custom tooltip formatter to display both planned and actual times
+  const tooltipFormatter = (value: any, name: string, props: any) => {
+    // Instead of showing the minutes value, show the formatted time
+    if (name === "plannedWakeUp") {
+      return [props.payload.plannedWakeUpFormatted, "Target"];
+    }
+    if (name === "actualWakeUp") {
+      return [props.payload.actualWakeUpFormatted, "Actual"];
+    }
+    return [formatMinutes(value), name];
+  };
+  
   const chartConfig = {
     planned: {
       label: "Planned",
@@ -70,6 +91,7 @@ const ProgressMap = () => {
       color: "#FF7A5A" // coral
     }
   };
+  
   return <div className="bg-white rounded-xl shadow-md border border-lilac/20 overflow-hidden">
       <div className="bg-skyblue/20 border-b border-lilac/10 p-4 flex justify-between items-center">
         <h2 className="text-xl font-bold text-indigo">Your Sleep Journey</h2>
@@ -95,7 +117,7 @@ const ProgressMap = () => {
                   </div>
                 </div>
                 
-                {/* Replace the existing badge with a simple target time display */}
+                {/* Target time display */}
                 <div className="text-xs font-medium text-indigo my-px">
                   {wakeUpPlan?.intervals[0]?.wakeTime || 'No target set'}
                 </div>
@@ -118,7 +140,13 @@ const ProgressMap = () => {
                   fontSize: 10,
                   fill: '#2D3142'
                 }} tickMargin={5} width={35} />
-                    <ChartTooltip content={<ChartTooltipContent formatter={(value: any, name: string) => [formatMinutes(value), name === "plannedWakeUp" ? "Planned" : "Actual"]} />} />
+                    <ChartTooltip 
+                      content={
+                        <ChartTooltipContent 
+                          formatter={tooltipFormatter} 
+                        />
+                      } 
+                    />
                     <Legend iconSize={8} wrapperStyle={{
                   fontSize: '10px',
                   marginTop: '5px'
@@ -189,4 +217,5 @@ const ProgressMap = () => {
       </div>
     </div>;
 };
+
 export default ProgressMap;

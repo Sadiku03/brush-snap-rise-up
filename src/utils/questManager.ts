@@ -1,10 +1,16 @@
+
 import { Quest } from "../store/userStore";
+import { allHabitQuests, HabitQuest } from "../data/questsByLevel";
 
 export enum QuestCategory {
   MORNING = "Morning",
   NIGHT = "Night",
   CONSISTENCY = "Consistency",
-  GENERAL = "General"
+  GENERAL = "General",
+  SLEEP_HYGIENE = "Sleep Hygiene",
+  NUTRITION = "Nutrition",
+  MENTAL_PREP = "Mental Prep",
+  TECH_DETOX = "Tech Detox"
 }
 
 export interface QuestTemplate {
@@ -16,144 +22,64 @@ export interface QuestTemplate {
 }
 
 /**
- * Generates a set of daily quests
+ * Generates a set of daily quests based on user level
  */
-export function generateDailyQuests(): Quest[] {
-  // Pool of possible quests
-  const questPool: QuestTemplate[] = [
-    {
-      title: 'Early Bird',
-      description: 'Wake up at your scheduled time',
-      xpReward: 50,
-      category: QuestCategory.MORNING,
-      detailedDescription: 'Get up within 15 minutes of your target wake-up time to establish a consistent rhythm.'
-    },
-    {
-      title: 'Screen-Free Wind-Down',
-      description: 'Spend 30 minutes without screens before bed',
-      xpReward: 30,
-      category: QuestCategory.NIGHT,
-      detailedDescription: 'Avoid blue light from devices to help your body naturally prepare for sleep.'
-    },
-    {
-      title: 'Consistency Champion',
-      description: 'Go to bed within 30 minutes of your target bedtime',
-      xpReward: 40,
-      category: QuestCategory.CONSISTENCY,
-      detailedDescription: 'Maintain a steady sleep schedule by going to bed at approximately the same time each night.'
-    },
-    {
-      title: 'Morning Stretcher',
-      description: 'Do 5 minutes of stretching after waking up',
-      xpReward: 20,
-      category: QuestCategory.MORNING,
-      detailedDescription: 'Gentle stretching helps increase blood flow and wakes up your muscles and mind.'
-    },
-    {
-      title: 'Hydration Hero',
-      description: 'Drink a glass of water right after waking up',
-      xpReward: 15,
-      category: QuestCategory.MORNING,
-      detailedDescription: 'Rehydrating first thing helps kickstart your metabolism and replenishes fluids lost during sleep.'
-    },
-    {
-      title: 'Sunshine Seeker',
-      description: 'Get natural light within 30 minutes of waking up',
-      xpReward: 25,
-      category: QuestCategory.MORNING,
-      detailedDescription: 'Morning sunlight helps reset your circadian rhythm and improves mood and alertness.'
-    },
-    {
-      title: 'Balanced Breakfast',
-      description: 'Eat a healthy breakfast within an hour of waking up',
-      xpReward: 35,
-      category: QuestCategory.MORNING,
-      detailedDescription: 'A nutritious breakfast provides energy and helps regulate your appetite throughout the day.'
-    },
-    {
-      title: 'Journal Journey',
-      description: 'Write in your journal before going to bed',
-      xpReward: 20,
-      category: QuestCategory.NIGHT,
-      detailedDescription: 'Journaling helps clear your mind and process thoughts before sleep, reducing nighttime anxiety.'
-    },
-    {
-      title: 'Meditation Master',
-      description: 'Meditate for 5 minutes before bed',
-      xpReward: 30,
-      category: QuestCategory.NIGHT,
-      detailedDescription: 'Brief meditation helps calm your nervous system and prepare your mind for restful sleep.'
-    },
-    {
-      title: 'Sleep Environment Setup',
-      description: 'Prepare your bedroom for optimal sleep',
-      xpReward: 25,
-      category: QuestCategory.NIGHT,
-      detailedDescription: 'Ensure your room is cool, dark, and quiet to create ideal conditions for quality sleep.'
-    },
-    {
-      title: 'Consistent Wake-Up',
-      description: 'Wake up within 30 minutes of the same time for 3 days',
-      xpReward: 45,
-      category: QuestCategory.CONSISTENCY,
-      detailedDescription: "Maintaining a regular wake-up time helps train your body's internal clock for better sleep quality."
-    },
-    {
-      title: 'Caffeine Cutoff',
-      description: 'Avoid caffeine after 2pm',
-      xpReward: 20,
-      category: QuestCategory.NIGHT,
-      detailedDescription: 'Caffeine can stay in your system for 6+ hours and interfere with your ability to fall asleep.'
-    }
-  ];
+export function generateDailyQuests(userLevel: number = 1): Quest[] {
+  // Filter quests by user level
+  const unlockedHabits = allHabitQuests.filter(habit => habit.levelRequired <= userLevel);
   
-  // Select quests from different categories to ensure variety
-  const morningQuests = questPool.filter(q => q.category === QuestCategory.MORNING);
-  const nightQuests = questPool.filter(q => q.category === QuestCategory.NIGHT);
-  const consistencyQuests = questPool.filter(q => q.category === QuestCategory.CONSISTENCY);
-  const generalQuests = questPool.filter(q => q.category === QuestCategory.GENERAL);
+  // If no habits are unlocked yet, return empty array
+  if (unlockedHabits.length === 0) {
+    return [];
+  }
   
-  // Randomly select 1 from each category if possible, then fill remaining slots randomly
-  const selectedQuests: Quest[] = [];
+  // Select up to 3 random habits from the unlocked habits
   const maxQuests = 3;
+  const selectedQuests: Quest[] = [];
   
-  // Helper to get a random quest from array
-  const getRandomQuest = (quests: QuestTemplate[]) => {
-    return quests[Math.floor(Math.random() * quests.length)];
-  };
+  // Make a copy of unlockedHabits to avoid modifying the original array
+  const availableHabits = [...unlockedHabits];
   
-  // Try to get one from each main category first
-  if (morningQuests.length > 0 && selectedQuests.length < maxQuests) {
-    const quest = getRandomQuest(morningQuests);
-    selectedQuests.push(createQuestFromTemplate(quest));
-  }
-  
-  if (nightQuests.length > 0 && selectedQuests.length < maxQuests) {
-    const quest = getRandomQuest(nightQuests);
-    selectedQuests.push(createQuestFromTemplate(quest));
-  }
-  
-  if (consistencyQuests.length > 0 && selectedQuests.length < maxQuests) {
-    const quest = getRandomQuest(consistencyQuests);
-    selectedQuests.push(createQuestFromTemplate(quest));
-  }
-  
-  // If we still need more quests, fill with random ones
-  const allQuests = [...questPool];
-  while (selectedQuests.length < maxQuests && allQuests.length > 0) {
-    const randomIndex = Math.floor(Math.random() * allQuests.length);
-    const quest = allQuests[randomIndex];
+  // Select random habits
+  while (selectedQuests.length < maxQuests && availableHabits.length > 0) {
+    const randomIndex = Math.floor(Math.random() * availableHabits.length);
+    const habit = availableHabits[randomIndex];
     
-    // Remove this quest from the pool
-    allQuests.splice(randomIndex, 1);
+    // Remove this habit from the available pool
+    availableHabits.splice(randomIndex, 1);
     
-    // Make sure we don't have a duplicate title
-    if (!selectedQuests.find(q => q.title === quest.title)) {
-      selectedQuests.push(createQuestFromTemplate(quest));
-    }
+    // Convert HabitQuest to Quest
+    selectedQuests.push({
+      id: `${Date.now()}-${habit.id}`,
+      title: habit.title,
+      description: habit.description,
+      xpReward: habit.xp,
+      completed: false,
+      dateAssigned: new Date().toISOString(),
+      category: mapHabitCategoryToQuestCategory(habit.category),
+      detailedDescription: habit.detailedDescription
+    });
   }
   
   return selectedQuests;
+}
+
+/**
+ * Maps HabitQuest category to QuestCategory enum
+ */
+function mapHabitCategoryToQuestCategory(habitCategory: string): QuestCategory {
+  switch (habitCategory) {
+    case 'Sleep Hygiene':
+      return QuestCategory.SLEEP_HYGIENE;
+    case 'Nutrition':
+      return QuestCategory.NUTRITION;
+    case 'Mental Prep':
+      return QuestCategory.MENTAL_PREP;
+    case 'Tech Detox':
+      return QuestCategory.TECH_DETOX;
+    default:
+      return QuestCategory.GENERAL;
+  }
 }
 
 /**

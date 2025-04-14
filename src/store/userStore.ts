@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DailyCheckIn, logCheckIn, timeToMinutes } from '../utils/checkInTracker';
@@ -7,7 +8,11 @@ export enum QuestCategory {
   MORNING = "Morning",
   NIGHT = "Night", 
   CONSISTENCY = "Consistency",
-  GENERAL = "General"
+  GENERAL = "General",
+  SLEEP_HYGIENE = "Sleep Hygiene",
+  NUTRITION = "Nutrition",
+  MENTAL_PREP = "Mental Prep",
+  TECH_DETOX = "Tech Detox"
 }
 
 export interface Quest {
@@ -159,7 +164,8 @@ export const useUserStore = create<UserStore>()(
       
       refreshDailyQuests: () => {
         const today = new Date().toISOString().split('T')[0];
-        const newQuests = generateDailyQuests();
+        const { progress } = get();
+        const newQuests = generateDailyQuests(progress.level);
         
         set((state) => ({
           availableQuests: newQuests,

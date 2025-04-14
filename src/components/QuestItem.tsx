@@ -9,7 +9,10 @@ import {
   CheckSquare,
   Calendar,
   Moon,
-  Sun
+  Sun,
+  Coffee,
+  Brain,
+  TabletSmartphone
 } from "lucide-react";
 import { Quest, QuestCategory } from '@/store/userStore';
 import { cn } from '@/lib/utils';
@@ -27,14 +30,33 @@ const categoryIcons = {
   [QuestCategory.MORNING]: <Sun className="h-4 w-4 text-amber-500" />,
   [QuestCategory.NIGHT]: <Moon className="h-4 w-4 text-indigo-500" />,
   [QuestCategory.CONSISTENCY]: <Calendar className="h-4 w-4 text-emerald-500" />,
-  [QuestCategory.GENERAL]: <CheckSquare className="h-4 w-4 text-gray-500" />
+  [QuestCategory.GENERAL]: <CheckSquare className="h-4 w-4 text-gray-500" />,
+  [QuestCategory.SLEEP_HYGIENE]: <Moon className="h-4 w-4 text-purple-500" />,
+  [QuestCategory.NUTRITION]: <Coffee className="h-4 w-4 text-emerald-500" />,
+  [QuestCategory.MENTAL_PREP]: <Brain className="h-4 w-4 text-amber-500" />,
+  [QuestCategory.TECH_DETOX]: <TabletSmartphone className="h-4 w-4 text-blue-500" />
 };
 
 const categoryClasses = {
   [QuestCategory.MORNING]: "text-amber-700 bg-amber-50 border-amber-200",
   [QuestCategory.NIGHT]: "text-indigo-700 bg-indigo-50 border-indigo-200",
   [QuestCategory.CONSISTENCY]: "text-emerald-700 bg-emerald-50 border-emerald-200", 
-  [QuestCategory.GENERAL]: "text-gray-700 bg-gray-50 border-gray-200"
+  [QuestCategory.GENERAL]: "text-gray-700 bg-gray-50 border-gray-200",
+  [QuestCategory.SLEEP_HYGIENE]: "text-purple-700 bg-purple-50 border-purple-200",
+  [QuestCategory.NUTRITION]: "text-emerald-700 bg-emerald-50 border-emerald-200",
+  [QuestCategory.MENTAL_PREP]: "text-amber-700 bg-amber-50 border-amber-200",
+  [QuestCategory.TECH_DETOX]: "text-blue-700 bg-blue-50 border-blue-200"
+};
+
+const categoryNames = {
+  [QuestCategory.MORNING]: "Morning",
+  [QuestCategory.NIGHT]: "Night",
+  [QuestCategory.CONSISTENCY]: "Consistency",
+  [QuestCategory.GENERAL]: "General",
+  [QuestCategory.SLEEP_HYGIENE]: "Sleep Hygiene",
+  [QuestCategory.NUTRITION]: "Nutrition",
+  [QuestCategory.MENTAL_PREP]: "Mental Prep",
+  [QuestCategory.TECH_DETOX]: "Tech Detox"
 };
 
 const QuestItem = ({ 
@@ -51,10 +73,17 @@ const QuestItem = ({
   const categoryIcon = categoryIcons[quest.category] || 
     categoryIcons[QuestCategory.GENERAL];
   
+  // Get the category style
+  const categoryClass = categoryClasses[quest.category] || 
+    categoryClasses[QuestCategory.GENERAL];
+    
+  // Get category name for display
+  const categoryName = categoryNames[quest.category] || "General";
+  
   // Use a completed style for completed quests, and category style for available quests
   const itemClass = isCompleted 
     ? "bg-emerald-50 border-emerald-200 text-emerald-700" 
-    : `bg-amber-50 border-amber-200 text-amber-700`;
+    : categoryClass;
   
   return (
     <div className={cn(
@@ -65,6 +94,13 @@ const QuestItem = ({
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-opacity-10 border border-current border-opacity-20">
+              {categoryIcon}
+              <span className="ml-1">{categoryName}</span>
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2 mb-1 mt-2">
             {isCompleted ? (
               <CheckCircle className="h-5 w-5 text-emerald-500" />
             ) : categoryIcon}

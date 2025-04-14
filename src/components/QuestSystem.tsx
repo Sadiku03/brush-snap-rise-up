@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Award, Star, RefreshCw, Info, ChevronDown, ChevronRight, Calendar, List } from "lucide-react";
@@ -202,7 +203,7 @@ const QuestSystem = () => {
                     <div className="bg-emerald-50 p-3">
                       <CollapsibleTrigger className="flex items-center justify-between w-full">
                         <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wider">
-                          Completed Quests
+                          Completed Quests Today
                         </h3>
                         {completedExpanded ? (
                           <ChevronDown className="h-5 w-5 text-emerald-500" />

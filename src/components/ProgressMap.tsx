@@ -1,3 +1,4 @@
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useUserStore } from '@/store/userStore';
 import { Button } from "@/components/ui/button";
@@ -110,6 +111,11 @@ const ProgressMap = () => {
   const hasAdjustments = wakeUpPlan?.intervals.some(interval => interval.isAdjusted) || false;
   const adjustmentCount = wakeUpPlan?.adjustmentHistory?.length || 0;
   
+  // Function to get the stroke dash array based on whether the data point is adjusted
+  const getStrokeDashArray = (d: ChartDataPoint) => {
+    return d.isAdjusted ? "5 5" : "0";
+  };
+  
   return (
     <div className="w-full space-y-6 py-4">
       <div className="flex flex-row justify-between items-center">
@@ -194,7 +200,7 @@ const ProgressMap = () => {
                     dataKey="plannedWakeUp" 
                     stroke="#FF7A5A" 
                     strokeWidth={2} 
-                    strokeDasharray={(d) => d.isAdjusted ? "5 5" : "0"}
+                    strokeDasharray={getStrokeDashArray}
                     dot={{
                       r: 3,
                       fill: '#FF7A5A',

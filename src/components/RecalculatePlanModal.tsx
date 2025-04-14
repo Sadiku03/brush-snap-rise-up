@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, RefreshCw, XCircle } from "lucide-react";
+import { CheckCircle, RefreshCw, XCircle, AlertTriangle } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 
 const RecalculatePlanModal = () => {
@@ -45,29 +45,46 @@ const RecalculatePlanModal = () => {
   };
   
   if (!wakeUpPlan) return null;
+
+  // Calculate days remaining in the plan
+  const today = new Date().toISOString().split('T')[0];
+  const targetDate = new Date(wakeUpPlan.targetDate);
+  const currentDate = new Date(today);
+  const daysRemaining = Math.ceil((targetDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
   
   return (
     <Dialog open={showRecalculationModal} onOpenChange={setShowRecalculationModal}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-indigo">Adjust Your Wake-up Plan</DialogTitle>
+          <div className="flex items-center space-x-2">
+            <AlertTriangle className="h-5 w-5 text-coral" />
+            <DialogTitle className="text-indigo">Adjust Your Wake-up Plan</DialogTitle>
+          </div>
           <DialogDescription>
             {analysis.reason || "Your wake-up schedule seems to be off track. Would you like to recalculate your plan?"}
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
+          <div className="rounded-lg bg-skyblue/10 p-3 border border-skyblue/20">
+            <p className="text-sm text-indigo mb-2">
+              This will recalculate your remaining {daysRemaining} days while still aiming for your original target time.
+            </p>
+          </div>
+          
           <div className="space-y-2">
-            <Label htmlFor="current-wake" className="text-indigo/80">
+            <Label htmlFor="current-wake" className="text-indigo/80 mb-1 block">
               Your Current Wake-Up Time
             </Label>
-            <Input
-              id="current-wake"
-              type="time"
-              value={latestWakeTime}
-              onChange={(e) => setLatestWakeTime(e.target.value)}
-              className="input-field"
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                id="current-wake"
+                type="time"
+                value={latestWakeTime}
+                onChange={(e) => setLatestWakeTime(e.target.value)}
+                className="input-field"
+              />
+            </div>
             <p className="text-xs text-indigo/70">
               We'll use this as the starting point for your updated plan.
             </p>
@@ -88,7 +105,10 @@ const RecalculatePlanModal = () => {
                 <CheckCircle className="h-5 w-5 text-indigo" />
               </div>
               <span className="text-sm font-medium text-indigo">
-                Your target date is still {wakeUpPlan.targetDate}
+                Your target date is still {new Date(wakeUpPlan.targetDate).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric'
+                })}
               </span>
             </div>
           </div>

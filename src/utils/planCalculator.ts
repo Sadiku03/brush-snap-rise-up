@@ -1,3 +1,4 @@
+
 import { WakeUpPlan } from "../store/userStore";
 
 /**
@@ -242,7 +243,11 @@ export function recalculateWakePlan({
     currentWakeTime: latestWakeTime, // Update the current wake time
     targetWakeTime,
     targetDate,
-    intervals: sortedIntervals
+    intervals: sortedIntervals.map(interval => ({
+      ...interval,
+      // Mark future intervals as adjusted if they're from today onwards
+      isAdjusted: interval.date >= currentDate
+    }))
   };
 }
 
@@ -276,11 +281,22 @@ export function analyzeWakeUpPlan(plan: WakeUpPlan): {
     !interval.completed && interval.date !== today
   ).length;
   
+  // Get the most recent completed interval to use as the latest wake time
+  const latestCompletedInterval = recentIntervals.find(interval => interval.completed);
+  const latestWakeTime = latestCompletedInterval?.wakeTime || plan.currentWakeTime;
+  
+  // Check for off-track wake-ups (if we had actual wake-up times)
+  let offTrackWakeUps = 0;
+  
+  // If we have adjustment history, check for recent adjustments
+  const recentAdjustments = plan.adjustmentHistory?.filter(adj => {
+    const adjDate = new Date(adj.date);
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+    return adjDate >= fiveDaysAgo;
+  }).length || 0;
+  
   if (missedCheckIns >= 2) {
-    // Use the most recent wake time or the current wake time as fallback
-    const latestCompletedInterval = recentIntervals.find(interval => interval.completed);
-    const latestWakeTime = latestCompletedInterval?.wakeTime || plan.currentWakeTime;
-    
     return { 
       needsReset: true, 
       reason: "You've missed 2 or more check-ins recently.", 
@@ -288,9 +304,21 @@ export function analyzeWakeUpPlan(plan: WakeUpPlan): {
     };
   }
   
-  // Get the latest actual wake times from brush snaps
-  // For a real implementation, we would need to store the actual wake times
-  // For now, we'll consider this as a future enhancement
+  if (recentAdjustments >= 2) {
+    return {
+      needsReset: true,
+      reason: "Your plan has been adjusted multiple times recently.",
+      latestWakeTime
+    };
+  }
+  
+  if (offTrackWakeUps >= 2) {
+    return {
+      needsReset: true,
+      reason: "Your actual wake-up times have been off schedule.",
+      latestWakeTime
+    };
+  }
   
   return { needsReset: false, reason: null, latestWakeTime: null };
 }

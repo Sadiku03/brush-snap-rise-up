@@ -5,11 +5,12 @@ import { useUserStore } from '@/store/userStore';
 import { calculateWakeUpPlan, analyzeWakeUpPlan } from '@/utils/planCalculator';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { RefreshCw, Zap } from 'lucide-react';
+import { RefreshCw, Zap, AlertTriangle } from 'lucide-react';
 import RecalculatePlanModal from '@/components/RecalculatePlanModal';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Progress = () => {
-  const { wakeUpPlan, setWakeUpPlan, setShowRecalculationModal } = useUserStore();
+  const { wakeUpPlan, setWakeUpPlan, setShowRecalculationModal, showRecalculationModal } = useUserStore();
   const { toast } = useToast();
 
   // Function to refresh the wake-up plan with the latest calculation logic
@@ -55,7 +56,19 @@ const Progress = () => {
   };
   
   // Analyze plan to see if it needs adjustment
-  const planAnalysis = wakeUpPlan ? analyzeWakeUpPlan(wakeUpPlan) : { needsReset: false };
+  const planAnalysis = wakeUpPlan ? analyzeWakeUpPlan(wakeUpPlan) : { needsReset: false, reason: null };
+
+  // Automatically check for disruptions on component mount
+  useEffect(() => {
+    if (wakeUpPlan && planAnalysis.needsReset && !showRecalculationModal) {
+      // Wait a moment before showing the modal to avoid immediate popup on page load
+      const timer = setTimeout(() => {
+        setShowRecalculationModal(true);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [wakeUpPlan, planAnalysis.needsReset, showRecalculationModal, setShowRecalculationModal]);
 
   return (
     <div className="space-y-4 px-3 py-4 sm:px-6 sm:py-6">
@@ -92,6 +105,24 @@ const Progress = () => {
           </div>
         )}
       </div>
+      
+      {/* Display an alert if plan needs recalculation */}
+      {wakeUpPlan && planAnalysis.needsReset && !showRecalculationModal && (
+        <Alert className="bg-coral/10 text-coral border-coral/20 mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle className="text-coral">Your wake-up plan needs adjustment</AlertTitle>
+          <AlertDescription>
+            {planAnalysis.reason || "Your progress has deviated from the original plan."}
+            <Button 
+              variant="link" 
+              className="text-coral p-0 h-auto ml-1"
+              onClick={handleOpenRecalculationModal}
+            >
+              Recalculate plan now →
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       
       <div className="grid grid-cols-1 gap-4">
         <ProgressMap />

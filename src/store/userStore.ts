@@ -18,6 +18,7 @@ export interface WakeUpPlan {
     date: string;
     wakeTime: string;
     completed: boolean;
+    isAdjusted?: boolean;
   }[];
   adjustmentHistory?: {
     date: string;
@@ -280,6 +281,18 @@ export const useUserStore = create<UserStore>()(
             intervals: newIntervals
           }
         });
+        
+        const { analyzeWakeUpPlan } = require('../utils/planCalculator');
+        const shouldShowModal = analyzeWakeUpPlan({
+          ...wakeUpPlan,
+          intervals: newIntervals
+        }).needsReset;
+        
+        if (shouldShowModal && !get().showRecalculationModal) {
+          setTimeout(() => {
+            set({ showRecalculationModal: true });
+          }, 1000);
+        }
       },
       
       resetProgress: () => set({

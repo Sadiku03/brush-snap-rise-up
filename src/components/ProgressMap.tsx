@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AlertTriangle } from 'lucide-react';
 
 interface ChartDataPoint {
   date: string;
@@ -13,6 +14,7 @@ interface ChartDataPoint {
   completed: boolean;
   plannedWakeUpFormatted: string;
   actualWakeUpFormatted: string;
+  isAdjusted?: boolean;
 }
 
 const ProgressMap = () => {
@@ -59,7 +61,8 @@ const ProgressMap = () => {
         originalDate: interval.date,
         completed: interval.completed,
         plannedWakeUpFormatted: format24Hours(timeInMinutes),
-        actualWakeUpFormatted: actualWakeUpMinutes ? format24Hours(actualWakeUpMinutes) : 'No check-in'
+        actualWakeUpFormatted: actualWakeUpMinutes ? format24Hours(actualWakeUpMinutes) : 'No check-in',
+        isAdjusted: interval.isAdjusted
       };
     });
   };
@@ -104,6 +107,9 @@ const ProgressMap = () => {
     return [format24Hours(value), name];
   };
   
+  const hasAdjustments = wakeUpPlan?.intervals.some(interval => interval.isAdjusted) || false;
+  const adjustmentCount = wakeUpPlan?.adjustmentHistory?.length || 0;
+  
   return (
     <div className="w-full space-y-6 py-4">
       <div className="flex flex-row justify-between items-center">
@@ -123,6 +129,13 @@ const ProgressMap = () => {
                   </Progress>
                 </div>
               </div>
+              
+              {hasAdjustments && (
+                <div className="flex items-center gap-1.5 bg-skyblue/10 p-1.5 px-2 rounded-md text-xs text-indigo/70">
+                  <AlertTriangle className="h-3 w-3 text-coral" />
+                  <span>Plan adjusted {adjustmentCount} {adjustmentCount === 1 ? 'time' : 'times'}</span>
+                </div>
+              )}
               
               <div className="text-xs font-medium text-indigo my-px">
                 {wakeUpPlan?.intervals[0]?.wakeTime || 'No target set'}
@@ -181,6 +194,7 @@ const ProgressMap = () => {
                     dataKey="plannedWakeUp" 
                     stroke="#FF7A5A" 
                     strokeWidth={2} 
+                    strokeDasharray={(d) => d.isAdjusted ? "5 5" : "0"}
                     dot={{
                       r: 3,
                       fill: '#FF7A5A',
@@ -220,7 +234,8 @@ const ProgressMap = () => {
                       <div 
                         key={index} 
                         className={`p-2 rounded-lg border flex justify-between items-center
-                          ${interval.completed ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-lilac/20'}`}
+                          ${interval.completed ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-lilac/20'}
+                          ${interval.isAdjusted ? 'border-l-2 border-l-coral' : ''}`}
                       >
                         <div className="flex items-center gap-2">
                           <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs
@@ -236,7 +251,7 @@ const ProgressMap = () => {
                               })}
                             </p>
                             <div className="flex flex-col text-xs text-indigo/70">
-                              <span>Planned: {interval.wakeTime}</span>
+                              <span>Planned: {interval.wakeTime} {interval.isAdjusted && <span className="text-coral text-[10px]">(adjusted)</span>}</span>
                               {brushSnap && <span className="text-coral">Completed</span>}
                             </div>
                           </div>

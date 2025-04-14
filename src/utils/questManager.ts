@@ -1,4 +1,3 @@
-
 import { Quest } from "../store/userStore";
 
 export enum QuestCategory {
@@ -97,7 +96,7 @@ export function generateDailyQuests(): Quest[] {
       description: 'Wake up within 30 minutes of the same time for 3 days',
       xpReward: 45,
       category: QuestCategory.CONSISTENCY,
-      detailedDescription: 'Maintaining a regular wake-up time helps train your body's internal clock for better sleep quality.'
+      detailedDescription: "Maintaining a regular wake-up time helps train your body's internal clock for better sleep quality."
     },
     {
       title: 'Caffeine Cutoff',

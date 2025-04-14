@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import ProgressMap from '@/components/ProgressMap';
 import { useUserStore } from '@/store/userStore';
 import { calculateWakeUpPlan, analyzeWakeUpPlan } from '@/utils/planCalculator';
+import { Button } from '@/components/ui/button';  // Add this import
 import { useToast } from '@/hooks/use-toast';
 import { RefreshCw, AlertTriangle, Clock } from 'lucide-react';
 import RecalculatePlanModal from '@/components/RecalculatePlanModal';

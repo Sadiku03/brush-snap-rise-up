@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Award, Star, RefreshCw, Info, ChevronDown, ChevronRight, Calendar, List } from "lucide-react";
@@ -46,7 +45,6 @@ const QuestSystem = () => {
   const [questsRefreshed, setQuestsRefreshed] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   
-  // Add state for collapsible sections
   const [availableExpanded, setAvailableExpanded] = useState(true);
   const [completedExpanded, setCompletedExpanded] = useState(true);
   
@@ -117,7 +115,6 @@ const QuestSystem = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          {/* View Mode Toggle */}
           <div className="border border-lilac/30 rounded-md flex overflow-hidden mr-2">
             <Button
               variant="ghost"
@@ -207,7 +204,6 @@ const QuestSystem = () => {
         
         {viewMode === 'list' ? (
           <div className="space-y-6">
-            {/* Available Quests Section with Collapsible */}
             <Collapsible
               open={availableExpanded}
               onOpenChange={setAvailableExpanded}
@@ -238,7 +234,6 @@ const QuestSystem = () => {
               </CollapsibleContent>
             </Collapsible>
             
-            {/* Completed Quests Section with Collapsible */}
             {completedQuests.length > 0 && (
               <Collapsible
                 open={completedExpanded}
@@ -274,7 +269,7 @@ const QuestSystem = () => {
         ) : (
           <QuestCalendarView 
             completedQuests={completedQuests}
-            allHistoricalQuests={questHistory.questsByDate}
+            allHistoricalQuests={questHistory.byDate}
             completionStatus={questHistory.completionStatus}
           />
         )}

@@ -2,8 +2,6 @@
 import { useEffect } from 'react';
 import { useUserStore } from '@/store/userStore';
 import SmartWakeUpPlan from '@/components/SmartWakeUpPlan';
-import QuestSystem from '@/components/QuestSystem';
-import BrushSnap from '@/components/BrushSnap';
 import { getNextWakeUpTime } from '@/utils/planCalculator';
 
 const Dashboard = () => {
@@ -25,10 +23,6 @@ const Dashboard = () => {
       
       <div className="grid grid-cols-1 gap-6">
         <SmartWakeUpPlan />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <QuestSystem />
-          <BrushSnap />
-        </div>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
-import { format } from "date-fns";
-import { CalendarIcon, CheckCircle, XCircle } from "lucide-react";
+import { format, addMonths, subMonths } from "date-fns";
+import { CalendarIcon, CheckCircle, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Quest } from '@/store/userStore';
 import { useUserStore } from '@/store/userStore';
 import { cn } from "@/lib/utils";
@@ -18,13 +19,16 @@ import QuestItem from './QuestItem';
 interface QuestCalendarViewProps {
   completedQuests: Quest[];
   allHistoricalQuests?: Record<string, { completed: Quest[], uncompleted: Quest[] }>;
+  completionStatus?: Record<string, 'full' | 'partial' | 'none'>;
 }
 
 const QuestCalendarView = ({ 
   completedQuests, 
-  allHistoricalQuests = {} 
+  allHistoricalQuests = {},
+  completionStatus = {}
 }: QuestCalendarViewProps) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const { progress } = useUserStore();
   
   // Format the selected date as YYYY-MM-DD for lookup
@@ -35,55 +39,135 @@ const QuestCalendarView = ({
     completed: [], 
     uncompleted: [] 
   }) : { completed: [], uncompleted: [] };
-  
-  // Get unique dates from the completed quests for calendar highlighting
-  const completedDates = completedQuests.reduce<Record<string, boolean>>((acc, quest) => {
-    const dateStr = new Date(quest.dateAssigned).toISOString().split('T')[0];
-    acc[dateStr] = true;
-    return acc;
-  }, {});
+
+  // Navigation functions for switching months
+  const goToPreviousMonth = () => {
+    setCurrentMonth(prevMonth => subMonths(prevMonth, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentMonth(prevMonth => addMonths(prevMonth, 1));
+  };
+
+  // Custom day rendering for the calendar
+  const renderDay = (day: Date, modifiers: any) => {
+    const dateStr = format(day, 'yyyy-MM-dd');
+    const status = completionStatus[dateStr] || 'none';
+    
+    let backgroundColor;
+    let textColor = 'text-indigo';
+    
+    switch (status) {
+      case 'full':
+        backgroundColor = 'bg-green-100';
+        break;
+      case 'partial':
+        backgroundColor = 'bg-amber-100';
+        break;
+      default:
+        backgroundColor = 'bg-white';
+    }
+    
+    return (
+      <div className={`flex items-center justify-center h-9 w-9 rounded-md ${backgroundColor} ${textColor}`}>
+        {format(day, 'd')}
+      </div>
+    );
+  };
+
+  // Determine the background color for a day based on completion status
+  const getDayClass = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const status = completionStatus[dateStr];
+    
+    switch (status) {
+      case 'full':
+        return 'bg-green-100 text-green-800 font-medium';
+      case 'partial':
+        return 'bg-amber-100 text-amber-800 font-medium';
+      default:
+        return '';
+    }
+  };
   
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col space-y-2">
         <h3 className="text-sm font-semibold text-indigo/60 uppercase tracking-wider">Quest History</h3>
         
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-fit justify-start text-left font-normal bg-white/80 text-indigo/80 border-lilac/20"
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {selectedDate ? (
-                format(selectedDate, "PPP")
-              ) : (
-                <span>Pick a date</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-white" align="center">
+        <Card className="border border-lilac/20 shadow-sm">
+          <CardContent className="p-4">
+            {/* Calendar header with month navigation */}
+            <div className="flex items-center justify-between mb-4">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={goToPreviousMonth}
+                className="text-indigo/70"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              
+              <h3 className="text-lg font-medium text-indigo">
+                {format(currentMonth, 'MMMM yyyy')}
+              </h3>
+              
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={goToNextMonth}
+                className="text-indigo/70"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+            
+            {/* Full month calendar */}
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
-              className={cn("p-3 pointer-events-auto")}
+              month={currentMonth}
+              onMonthChange={setCurrentMonth}
+              className={cn("p-0")}
               modifiers={{
                 completed: (date) => {
                   const dateStr = format(date, 'yyyy-MM-dd');
-                  return !!completedDates[dateStr];
-                }
+                  return completionStatus[dateStr] === 'full';
+                },
+                partial: (date) => {
+                  const dateStr = format(date, 'yyyy-MM-dd');
+                  return completionStatus[dateStr] === 'partial';
+                },
               }}
               modifiersClassNames={{
-                completed: "bg-skyblue/20 font-semibold text-indigo rounded-md"
+                completed: "bg-green-100 font-medium text-green-800 rounded-md",
+                partial: "bg-amber-100 font-medium text-amber-800 rounded-md",
               }}
             />
-          </PopoverContent>
-        </Popover>
+          </CardContent>
+        </Card>
+        
+        {/* Legend for the calendar */}
+        <div className="flex items-center justify-center space-x-4 text-sm text-indigo/70">
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-green-100 mr-1"></div>
+            <span>All completed</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-amber-100 mr-1"></div>
+            <span>Partially completed</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-white border border-indigo/10 mr-1"></div>
+            <span>None completed</span>
+          </div>
+        </div>
       </div>
       
+      {/* Selected day details */}
       {selectedDate && (
-        <Card className="border border-lilac/20 shadow-sm">
+        <Card className="border border-lilac/20 shadow-sm mt-4">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-medium text-indigo">
@@ -99,6 +183,8 @@ const QuestCalendarView = ({
                 </div>
               )}
             </div>
+            
+            <Separator className="my-3 bg-lilac/10" />
             
             {/* If no quests for this day */}
             {selectedDayQuests.completed.length === 0 && selectedDayQuests.uncompleted.length === 0 && (

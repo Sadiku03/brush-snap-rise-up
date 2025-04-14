@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Award, Star, RefreshCw, Info } from "lucide-react";
@@ -20,7 +19,6 @@ import QuestCalendarView from './QuestCalendarView';
 import { useQuestHistory } from '@/hooks/useQuestHistory';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Function to calculate XP with streak bonus (same as in store)
 const calculateXpWithStreak = (baseXp: number, streak: number): number => {
   const bonusPercentage = 0.1; // 10% bonus per day in streak
   const multiplier = 1 + (streak * bonusPercentage);
@@ -43,26 +41,19 @@ const QuestSystem = () => {
   const [questsRefreshed, setQuestsRefreshed] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   
-  // Get quest history
   const questHistory = useQuestHistory(availableQuests, completedQuests);
   
-  // Calculate the current streak multiplier
   const streakMultiplier = (1 + (progress.streak * 0.1)).toFixed(1);
   
-  // Calculate XP remaining until next level
   const xpRemaining = getXpUntilNextLevel(progress.level, progress.xp);
   
-  // Weekly streak progress (out of 7 days)
   const weeklyStreakProgress = Math.min(progress.streak / 7, 1) * 100;
   
-  // Calculate adjusted XP for a given base XP
   const calculateAdjustedXp = (baseXp: number) => {
     return calculateXpWithStreak(baseXp, progress.streak);
   };
   
-  // Handle completing a quest
   const handleCompleteQuest = (quest: any) => {
-    // Calculate the streak-adjusted XP for the toast message
     const adjustedXp = calculateXpWithStreak(quest.xpReward, progress.streak);
     
     completeQuest(quest.id);
@@ -74,14 +65,11 @@ const QuestSystem = () => {
     });
   };
   
-  // Handle manual quest refresh
   const handleRefreshQuests = () => {
     setRefreshing(true);
     
-    // Actual refresh logic
     refreshDailyQuests();
     
-    // Save the refresh date to localStorage
     const today = new Date().toISOString().split('T')[0];
     localStorage.setItem(LOCAL_STORAGE_LAST_REFRESH_KEY, today);
     
@@ -98,14 +86,12 @@ const QuestSystem = () => {
     }, 1000);
   };
   
-  // Check if quests need refreshing on page load
   useEffect(() => {
     const lastRefreshDate = localStorage.getItem(LOCAL_STORAGE_LAST_REFRESH_KEY);
     
     if (shouldRefreshQuests(lastRefreshDate)) {
       refreshDailyQuests();
       
-      // Save today's date as the refresh date
       const today = new Date().toISOString().split('T')[0];
       localStorage.setItem(LOCAL_STORAGE_LAST_REFRESH_KEY, today);
       
@@ -165,7 +151,6 @@ const QuestSystem = () => {
               </span>
             </div>
             
-            {/* Weekly streak progress */}
             <div className="w-24 bg-indigo/10 h-1 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-lilac transition-all duration-500"
@@ -230,6 +215,7 @@ const QuestSystem = () => {
                   <QuestCalendarView 
                     completedQuests={completedQuests}
                     allHistoricalQuests={questHistory.byDate}
+                    completionStatus={questHistory.completionStatus}
                   />
                 </TabsContent>
               </Tabs>

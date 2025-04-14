@@ -6,6 +6,7 @@ import { Quest } from '@/store/userStore';
 interface QuestHistoryData {
   byDate: Record<string, { completed: Quest[], uncompleted: Quest[] }>;
   completedDates: string[];
+  completionStatus: Record<string, 'full' | 'partial' | 'none'>;
 }
 
 export function useQuestHistory(availableQuests: Quest[], completedQuests: Quest[]): QuestHistoryData {
@@ -16,6 +17,7 @@ export function useQuestHistory(availableQuests: Quest[], completedQuests: Quest
     // Group quests by date
     const byDate: Record<string, { completed: Quest[], uncompleted: Quest[] }> = {};
     const dateSet = new Set<string>();
+    const completionStatus: Record<string, 'full' | 'partial' | 'none'> = {};
     
     // Process completed quests first
     completedQuests.forEach(quest => {
@@ -44,15 +46,31 @@ export function useQuestHistory(availableQuests: Quest[], completedQuests: Quest
       }
     });
     
+    // Calculate completion status for each date
+    Object.keys(byDate).forEach(dateStr => {
+      const { completed, uncompleted } = byDate[dateStr];
+      const totalQuests = completed.length + uncompleted.length;
+      
+      if (totalQuests === 0) {
+        completionStatus[dateStr] = 'none';
+      } else if (uncompleted.length === 0) {
+        completionStatus[dateStr] = 'full';
+      } else {
+        completionStatus[dateStr] = 'partial';
+      }
+    });
+    
     // Convert the set to an array for completedDates
     return {
       byDate,
-      completedDates: Array.from(dateSet)
+      completedDates: Array.from(dateSet),
+      completionStatus
     };
   }, [availableQuests, completedQuests]);
 
   return {
     byDate: questHistoryByDate.byDate,
-    completedDates: questHistoryByDate.completedDates
+    completedDates: questHistoryByDate.completedDates,
+    completionStatus: questHistoryByDate.completionStatus
   };
 }

@@ -33,29 +33,28 @@ const WindDownZone = () => {
   
   return (
     <div className="bg-white rounded-xl shadow-md border border-lilac/20 overflow-hidden">
-      <div className="bg-gradient-to-r from-skyblue/20 to-lilac/20 p-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Moon className="h-5 w-5 text-indigo" />
-          <h2 className="text-xl font-bold text-indigo">Wind-Down Zone</h2>
+      <Collapsible open={expanded} onOpenChange={setExpanded}>
+        <div className="bg-gradient-to-r from-skyblue/20 to-lilac/20 p-4 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Moon className="h-5 w-5 text-indigo" />
+            <h2 className="text-xl font-bold text-indigo">Wind-Down Zone</h2>
+          </div>
+          
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-indigo/70"
+            >
+              {expanded ? (
+                <ChevronUp className="h-5 w-5" />
+              ) : (
+                <ChevronDown className="h-5 w-5" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
         </div>
         
-        <CollapsibleTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setExpanded(!expanded)}
-            className="text-indigo/70"
-          >
-            {expanded ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
-          </Button>
-        </CollapsibleTrigger>
-      </div>
-      
-      <Collapsible open={expanded} onOpenChange={setExpanded}>
         <div className="p-5 space-y-5">
           <div className="text-center mb-4">
             <p className="text-indigo/70 text-base leading-relaxed">

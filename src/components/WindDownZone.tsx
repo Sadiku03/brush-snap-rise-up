@@ -8,6 +8,7 @@ import {
 import WindDownToolCard from './WindDownToolCard';
 import BreathingExercise from './BreathingExercise';
 import AmbientSoundsSelector from './AmbientSoundsSelector';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const WindDownZone = () => {
   const [expanded, setExpanded] = useState(false);
@@ -38,21 +39,23 @@ const WindDownZone = () => {
           <h2 className="text-xl font-bold text-indigo">Wind-Down Zone</h2>
         </div>
         
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setExpanded(!expanded)}
-          className="text-indigo/70"
-        >
-          {expanded ? (
-            <ChevronUp className="h-5 w-5" />
-          ) : (
-            <ChevronDown className="h-5 w-5" />
-          )}
-        </Button>
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setExpanded(!expanded)}
+            className="text-indigo/70"
+          >
+            {expanded ? (
+              <ChevronUp className="h-5 w-5" />
+            ) : (
+              <ChevronDown className="h-5 w-5" />
+            )}
+          </Button>
+        </CollapsibleTrigger>
       </div>
       
-      <div className={`transition-all duration-300 overflow-hidden ${expanded ? 'max-h-[1200px]' : 'max-h-[800px]'}`}>
+      <Collapsible open={expanded} onOpenChange={setExpanded}>
         <div className="p-5 space-y-5">
           <div className="text-center mb-4">
             <p className="text-indigo/70 text-base leading-relaxed">
@@ -100,7 +103,7 @@ const WindDownZone = () => {
             />
           </div>
           
-          {expanded && (
+          <CollapsibleContent>
             <div className="mt-5 p-5 bg-gradient-to-r from-coral/5 to-skyblue/5 rounded-xl border border-lilac/10">
               <div className="flex items-center gap-2 mb-3">
                 <Bed className="h-5 w-5 text-indigo" />
@@ -126,9 +129,9 @@ const WindDownZone = () => {
                 </li>
               </ul>
             </div>
-          )}
+          </CollapsibleContent>
         </div>
-      </div>
+      </Collapsible>
       
       {/* Tool dialogs */}
       <BreathingExercise 

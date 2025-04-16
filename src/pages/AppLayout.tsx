@@ -26,6 +26,11 @@ const AppLayout = () => {
   const { toast } = useToast();
   const { name, setUser, resetProgress } = useUserStore();
   
+  // Add the missing toggleMenu function
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+  
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

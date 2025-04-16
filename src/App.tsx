@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,7 +11,6 @@ import Login from "./pages/Login";
 
 const queryClient = new QueryClient();
 
-// Mobile frame wrapper component with enhanced iPhone look
 const MobileFrame = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const isAppRoute = location.pathname.startsWith('/app');
@@ -48,11 +46,9 @@ const MobileFrame = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Protected route component - now properly checks if user is set
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { name } = useUserStore();
   
-  // If no user name is set, redirect to login
   if (!name) {
     return <Navigate to="/login" replace />;
   }
@@ -67,6 +63,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route 
+            path="/" 
+            element={<Navigate to="/app" replace />} 
+          />
           <Route path="/login" element={<Login />} />
           <Route 
             path="/app/*" 

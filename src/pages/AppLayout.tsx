@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, User, Award, Calendar, Moon, Menu, LogOut, Wifi, Battery } from "lucide-react";
+import { Home, User, Award, Calendar, Moon, Menu, LogOut, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
 import { useToast } from "@/components/ui/use-toast";
@@ -23,6 +23,7 @@ const AppLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { name, setUser } = useUserStore();
   
   const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
@@ -38,6 +39,11 @@ const AppLayout = () => {
     });
     
     window.localStorage.removeItem("risequest-storage");
+    navigate("/login");
+  };
+
+  const handleLogin = () => {
+    setIsMenuOpen(false);
     navigate("/login");
   };
   
@@ -78,83 +84,100 @@ const AppLayout = () => {
           </DrawerHeader>
           
           <nav className="p-3 overflow-auto">
-            <div className="space-y-1">
-              <Link
-                to="/app"
-                className={`ios-menu-button ${
-                  location.pathname === '/app' 
-                    ? 'ios-menu-button-active' 
-                    : 'ios-menu-button-inactive'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Home className="h-5 w-5" />
-                <span>Dashboard</span>
-              </Link>
-              
-              <Link
-                to="/app/progress"
-                className={`ios-menu-button ${
-                  location.pathname === '/app/progress' 
-                    ? 'ios-menu-button-active' 
-                    : 'ios-menu-button-inactive'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Calendar className="h-5 w-5" />
-                <span>Schedule</span>
-              </Link>
-              
-              <Link
-                to="/app/quests"
-                className={`ios-menu-button ${
-                  location.pathname === '/app/quests' 
-                    ? 'ios-menu-button-active' 
-                    : 'ios-menu-button-inactive'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Award className="h-5 w-5" />
-                <span>Quests</span>
-              </Link>
-              
-              <Link
-                to="/app/profile"
-                className={`ios-menu-button ${
-                  location.pathname === '/app/profile' 
-                    ? 'ios-menu-button-active' 
-                    : 'ios-menu-button-inactive'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <User className="h-5 w-5" />
-                <span>Profile</span>
-              </Link>
-              
-              <Link
-                to="/app/wind-down"
-                className={`ios-menu-button ${
-                  location.pathname === '/app/wind-down' 
-                    ? 'ios-menu-button-active' 
-                    : 'ios-menu-button-inactive'
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Moon className="h-5 w-5" />
-                <span>Wind Down</span>
-              </Link>
-            </div>
+            {name ? (
+              // Logged in user menu
+              <div className="space-y-1">
+                <Link
+                  to="/app"
+                  className={`ios-menu-button ${
+                    location.pathname === '/app' 
+                      ? 'ios-menu-button-active' 
+                      : 'ios-menu-button-inactive'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Home className="h-5 w-5" />
+                  <span>Dashboard</span>
+                </Link>
+                
+                <Link
+                  to="/app/progress"
+                  className={`ios-menu-button ${
+                    location.pathname === '/app/progress' 
+                      ? 'ios-menu-button-active' 
+                      : 'ios-menu-button-inactive'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Calendar className="h-5 w-5" />
+                  <span>Schedule</span>
+                </Link>
+                
+                <Link
+                  to="/app/quests"
+                  className={`ios-menu-button ${
+                    location.pathname === '/app/quests' 
+                      ? 'ios-menu-button-active' 
+                      : 'ios-menu-button-inactive'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Award className="h-5 w-5" />
+                  <span>Quests</span>
+                </Link>
+                
+                <Link
+                  to="/app/profile"
+                  className={`ios-menu-button ${
+                    location.pathname === '/app/profile' 
+                      ? 'ios-menu-button-active' 
+                      : 'ios-menu-button-inactive'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <User className="h-5 w-5" />
+                  <span>Profile</span>
+                </Link>
+                
+                <Link
+                  to="/app/wind-down"
+                  className={`ios-menu-button ${
+                    location.pathname === '/app/wind-down' 
+                      ? 'ios-menu-button-active' 
+                      : 'ios-menu-button-inactive'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Moon className="h-5 w-5" />
+                  <span>Wind Down</span>
+                </Link>
+              </div>
+            ) : (
+              // Logged out user menu - basic navigation only
+              <div className="space-y-1">
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center justify-center gap-2 ios-menu-button"
+                  onClick={handleLogin}
+                >
+                  <LogIn className="h-5 w-5" />
+                  <span>Sign In</span>
+                </Button>
+              </div>
+            )}
           </nav>
           
           <DrawerFooter className="pb-8 pt-2">
-            <Button 
-              variant="outline" 
-              className="w-full border-coral/30 text-coral flex items-center justify-center gap-2 ios-menu-button"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Log Out</span>
-            </Button>
+            {name && (
+              <Button 
+                variant="outline" 
+                className="w-full border-coral/30 text-coral flex items-center justify-center gap-2 ios-menu-button"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Log Out</span>
+              </Button>
+            )}
           </DrawerFooter>
         </DrawerContent>
       </Drawer>

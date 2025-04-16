@@ -6,10 +6,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useUserStore } from "@/store/userStore";
 import { Battery, Wifi } from "lucide-react";
+import { useEffect } from "react";
 import Index from "./pages/Index";
 import AppLayout from "./pages/AppLayout";
 import NotFound from "./pages/NotFound";
-import OnboardingFlow from "./components/OnboardingFlow";
 
 const queryClient = new QueryClient();
 
@@ -49,21 +49,19 @@ const MobileFrame = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Protected route component
+// Protected route component simplified - no longer checks onboarding status
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { name, isOnboarded } = useUserStore();
+  const { setUser } = useUserStore();
   
-  // If user has name but is not onboarded, redirect to onboarding
-  if (name && !isOnboarded) {
-    return <OnboardingFlow />;
-  }
+  // Auto-set a default user name if none exists - this ensures users can always access the app
+  useEffect(() => {
+    const { name } = useUserStore.getState();
+    if (!name) {
+      setUser("User", "");
+    }
+  }, [setUser]);
   
-  // If user has no name, redirect to landing page
-  if (!name) {
-    return <Navigate to="/" replace />;
-  }
-  
-  // Otherwise, render the children
+  // Always render the children now
   return <>{children}</>;
 };
 
@@ -85,7 +83,6 @@ const App = () => (
               </MobileFrame>
             } 
           />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

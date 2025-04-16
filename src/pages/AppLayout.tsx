@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Routes, Route, Link, useLocation } from "react-router-dom";
+import { Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, User, Award, Calendar, Moon, Menu, LogOut, Wifi, Battery } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
@@ -21,6 +21,7 @@ import WindDown from "./WindDown";
 const AppLayout = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
   
   const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -37,7 +38,7 @@ const AppLayout = () => {
     });
     
     window.localStorage.removeItem("risequest-storage");
-    window.location.href = "/";
+    navigate("/login");
   };
   
   // Helper function to get page title based on current route

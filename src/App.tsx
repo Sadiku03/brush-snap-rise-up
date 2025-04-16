@@ -8,6 +8,7 @@ import { useUserStore } from "@/store/userStore";
 import { Battery, Wifi } from "lucide-react";
 import { useEffect } from "react";
 import Index from "./pages/Index";
+import Login from "./pages/Login";
 import AppLayout from "./pages/AppLayout";
 import NotFound from "./pages/NotFound";
 
@@ -49,19 +50,15 @@ const MobileFrame = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Protected route component simplified - no longer checks onboarding status
+// Protected route component - now properly checks if user is set
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { setUser } = useUserStore();
+  const { name } = useUserStore();
   
-  // Auto-set a default user name if none exists - this ensures users can always access the app
-  useEffect(() => {
-    const { name } = useUserStore.getState();
-    if (!name) {
-      setUser("User", "");
-    }
-  }, [setUser]);
+  // If no user name is set, redirect to login
+  if (!name) {
+    return <Navigate to="/login" replace />;
+  }
   
-  // Always render the children now
   return <>{children}</>;
 };
 
@@ -73,6 +70,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
           <Route 
             path="/app/*" 
             element={

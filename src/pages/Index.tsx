@@ -1,9 +1,12 @@
 
 import { Navigate } from "react-router-dom";
+import { useUserStore } from "@/store/userStore";
 
 const Index = () => {
-  // Directly navigate to app dashboard
-  return <Navigate to="/app" replace />;
+  const { name } = useUserStore();
+
+  // Redirect to login if no user, otherwise go to app
+  return name ? <Navigate to="/app" replace /> : <Navigate to="/login" replace />;
 };
 
 export default Index;

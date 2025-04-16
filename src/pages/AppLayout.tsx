@@ -68,7 +68,7 @@ const AppLayout = () => {
         </div>
       </header>
       
-      {/* iOS-style Drawer Menu - Simplified for secondary options */}
+      {/* iOS-style Drawer Menu - Updated with all main navigation options */}
       <Drawer open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <DrawerContent className="ios-drawer h-[60%] max-h-[60%]" onClick={(e) => e.stopPropagation()}>
           <div className="mx-auto mt-2 h-1 w-12 rounded-full bg-indigo/20"></div>
@@ -78,6 +78,58 @@ const AppLayout = () => {
           
           <nav className="p-3 overflow-auto">
             <div className="space-y-1">
+              <Link
+                to="/app"
+                className={`ios-menu-button ${
+                  location.pathname === '/app' 
+                    ? 'ios-menu-button-active' 
+                    : 'ios-menu-button-inactive'
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Home className="h-5 w-5" />
+                <span>Dashboard</span>
+              </Link>
+              
+              <Link
+                to="/app/progress"
+                className={`ios-menu-button ${
+                  location.pathname === '/app/progress' 
+                    ? 'ios-menu-button-active' 
+                    : 'ios-menu-button-inactive'
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Calendar className="h-5 w-5" />
+                <span>Schedule</span>
+              </Link>
+              
+              <Link
+                to="/app/quests"
+                className={`ios-menu-button ${
+                  location.pathname === '/app/quests' 
+                    ? 'ios-menu-button-active' 
+                    : 'ios-menu-button-inactive'
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Award className="h-5 w-5" />
+                <span>Quests</span>
+              </Link>
+              
+              <Link
+                to="/app/profile"
+                className={`ios-menu-button ${
+                  location.pathname === '/app/profile' 
+                    ? 'ios-menu-button-active' 
+                    : 'ios-menu-button-inactive'
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <User className="h-5 w-5" />
+                <span>Profile</span>
+              </Link>
+              
               <Link
                 to="/app/wind-down"
                 className={`ios-menu-button ${
@@ -90,8 +142,6 @@ const AppLayout = () => {
                 <Moon className="h-5 w-5" />
                 <span>Wind Down</span>
               </Link>
-              
-              {/* Add other secondary navigation items here if needed */}
             </div>
           </nav>
           

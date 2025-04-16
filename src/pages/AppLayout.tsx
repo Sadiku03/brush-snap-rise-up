@@ -1,7 +1,7 @@
 
 import { useState } from "react";
-import { Routes, Route, Link, useLocation, NavLink } from "react-router-dom";
-import { Home, User, Award, Calendar, Moon, Menu, X, LogOut, Wifi, Battery } from "lucide-react";
+import { Routes, Route, Link, useLocation } from "react-router-dom";
+import { Home, User, Award, Calendar, Moon, Menu, LogOut, Wifi, Battery } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
 import { useToast } from "@/components/ui/use-toast";
@@ -68,7 +68,7 @@ const AppLayout = () => {
         </div>
       </header>
       
-      {/* iOS-style Drawer Menu - Updated with all main navigation options */}
+      {/* iOS-style Drawer Menu - The only navigation method */}
       <Drawer open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <DrawerContent className="ios-drawer h-[60%] max-h-[60%]" onClick={(e) => e.stopPropagation()}>
           <div className="mx-auto mt-2 h-1 w-12 rounded-full bg-indigo/20"></div>
@@ -158,8 +158,8 @@ const AppLayout = () => {
         </DrawerContent>
       </Drawer>
       
-      {/* Main Content */}
-      <main className="flex-1 p-4 pb-24">
+      {/* Main Content - Adjusted to remove the bottom padding needed for tab bar */}
+      <main className="flex-1 p-4">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
@@ -168,77 +168,6 @@ const AppLayout = () => {
           <Route path="/wind-down" element={<WindDown />} />
         </Routes>
       </main>
-      
-      {/* Enhanced iOS-Style Tab Bar */}
-      <nav 
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-lilac/20 flex justify-around py-2 z-10"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-      >
-        <NavLink
-          to="/app"
-          className={({ isActive }) =>
-            `p-1 rounded-lg flex flex-col items-center ${
-              isActive ? 'text-coral' : 'text-indigo/70'
-            }`
-          }
-          end
-        >
-          {({ isActive }) => (
-            <>
-              <Home className={`h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`} />
-              <span className="text-xs mt-1 font-medium">Home</span>
-            </>
-          )}
-        </NavLink>
-        
-        <NavLink
-          to="/app/progress"
-          className={({ isActive }) =>
-            `p-1 rounded-lg flex flex-col items-center ${
-              isActive ? 'text-coral' : 'text-indigo/70'
-            }`
-          }
-        >
-          {({ isActive }) => (
-            <>
-              <Calendar className={`h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`} />
-              <span className="text-xs mt-1 font-medium">Schedule</span>
-            </>
-          )}
-        </NavLink>
-        
-        <NavLink
-          to="/app/quests"
-          className={({ isActive }) =>
-            `p-1 rounded-lg flex flex-col items-center ${
-              isActive ? 'text-coral' : 'text-indigo/70'
-            }`
-          }
-        >
-          {({ isActive }) => (
-            <>
-              <Award className={`h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`} />
-              <span className="text-xs mt-1 font-medium">Quests</span>
-            </>
-          )}
-        </NavLink>
-        
-        <NavLink
-          to="/app/profile"
-          className={({ isActive }) =>
-            `p-1 rounded-lg flex flex-col items-center ${
-              isActive ? 'text-coral' : 'text-indigo/70'
-            }`
-          }
-        >
-          {({ isActive }) => (
-            <>
-              <User className={`h-6 w-6 ${isActive ? 'fill-coral/20' : ''}`} />
-              <span className="text-xs mt-1 font-medium">Profile</span>
-            </>
-          )}
-        </NavLink>
-      </nav>
     </div>
   );
 };

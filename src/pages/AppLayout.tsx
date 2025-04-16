@@ -1,10 +1,11 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, User, Award, Calendar, Moon, Menu, LogOut, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/store/userStore";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Drawer,
   DrawerContent,
@@ -23,23 +24,47 @@ const AppLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { name, setUser } = useUserStore();
+  const { name, setUser, resetProgress } = useUserStore();
   
-  const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-  
-  const handleLogout = () => {
-    toast({
-      title: "Logged Out",
-      description: "You have been logged out successfully.",
-      duration: 3000,
-    });
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Update user store with data from session
+          setUser(
+            session.user.user_metadata.name || session.user.email?.split('@')[0] || 'User',
+            session.user.email || ''
+          );
+        } else if (event === 'SIGNED_OUT') {
+          // Clear user data and redirect to login
+          resetProgress();
+          navigate('/login');
+        }
+      }
+    );
     
-    window.localStorage.removeItem("risequest-storage");
-    navigate("/login");
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [setUser, navigate, resetProgress]);
+  
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged Out",
+        description: "You have been logged out successfully.",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem logging out.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleLogin = () => {

@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import AppLayout from "./pages/AppLayout";
 import NotFound from "./pages/NotFound";
+import LandingPage from "./components/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/welcome" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route 
             path="/app/*" 
